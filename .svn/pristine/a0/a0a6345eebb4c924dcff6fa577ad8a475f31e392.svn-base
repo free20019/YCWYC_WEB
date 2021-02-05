@@ -1,0 +1,24 @@
+{
+  "data": [
+    {
+      "id": "yingyunzonglan",
+      "title": "营运总览",
+      "fullPath": "/yingyunzonglan"
+    },
+    {
+      "id": "yydtjg",
+      "title": "营运动态监管",
+      "fullPath": "/yydtjg/dtjk"
+    },
+    {
+      "id": "fzjczc",
+      "title": "辅助决策支撑",
+      "fullPath": "/fzjczc/hyzl"
+    },
+    {
+      "id": "jtbsj",
+      "title": "交通部数据",
+      "fullPath": "/jtbsj/jtsjcx/ptgsjbxxb"
+    }
+  ]
+}

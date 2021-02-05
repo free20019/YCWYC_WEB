@@ -1,0 +1,1048 @@
+<!--车辆动态监控-->
+<template>
+  <div class="tw-template-wrapper">
+    <div class="tw-map-list">
+      <el-tabs v-model="tabs.active" type="card" :stretch="true">
+        <el-tab-pane label="车辆详情列表" name="clxqlb"> </el-tab-pane>
+      </el-tabs>
+      <div class="tw-tabs-content">
+        <template v-if="tabs.active == 'clxqlb'">
+          <div class="tw-search_tabs">
+            <el-input
+              class="list-input"
+              v-model="searchfor"
+              placeholder="请输入三位有效值"
+              @input="handleSearchForClick"
+              clearable
+            ></el-input>
+          </div>
+          <ul class="tw-list" v-loading="page.loading">
+            <li
+              class="tw-list-item"
+              :class="{ 'tw-text-error': item.type }"
+              v-for="item in this.page.data"
+              :key="item.id"
+              @click="handleVehicleClick(item)"
+            >
+              <!-- <span>{{item.vehino}}</span> -->
+              <i class="tw-icon--prefix el-icon-location-outline"></i>
+              {{ item.vehino }}{{ item.TYPE ? '（未上线）' : '' }}
+              <i class="tw-icon-platform" :class="[iconClassName(item.icon || '')]" v-if="!item.TYPE"></i>
+              <el-button
+                class="tw-list-suffix tw-li_btn"
+                type="text"
+                icon="iconfont icon-trajectory"
+                @click.stop.native="handleVehiclelsgj(item)"
+                size="mini"
+              ></el-button>
+              <!--<i class="tw-icon-platform" :class="[iconClassName(item.icon || '')]"></i>-->
+            </li>
+          </ul>
+          <el-pagination
+            small
+            class="tw-page-bar dynamicMontor"
+            layout="pager, total"
+            background
+            :page-size="page.pageSize"
+            :current-page="page.currentPage"
+            :total="page.total"
+            :pager-count="5"
+            @current-change="handleTablePageCurrentChange"
+          ></el-pagination>
+        </template>
+      </div>
+    </div>
+    <div class="tw-map-box">
+      <div id="gaodeMap" style="height: 100%;"></div>
+      <div class="tw-map-tool">
+        <div class="tw-tool_btn">
+          <i class="el-icon-arrow-right" @click="handleMapBtnClick"></i>
+        </div>
+        <transition name="tool">
+          <div class="tw-tool_list" v-if="toolDisplay" ref="mapTool">
+            <el-tabs v-model="editableTabsValue" class="tw-tool_tabs" type="card" @tab-click="clickItem">
+              <el-tab-pane name="all">
+                <div class="tw-tabs-label" slot="label">
+                  <div style="height:50px;line-height:50px;font-size: 16px;" class="tw-title">全部</div>
+                </div>
+              </el-tab-pane>
+              <el-tab-pane v-for="item in platformList" :key="item.COMPANY_ID" :name="item.COMPANY_ID">
+                <div class="tw-tabs-label" slot="label">
+                  <div style="height:30px">
+                    <svg class="iconfont" width="25" height="25" aria-hidden="true">
+                      <use :xlink:href="formatterIcon(item.COMPANY_ID)"></use>
+                    </svg>
+                  </div>
+                  <div class="tw-title">{{ item.ABB_NAME }}</div>
+                </div>
+              </el-tab-pane>
+            </el-tabs>
+          </div>
+        </transition>
+      </div>
+    </div>
+    <div class="tool-info" ref="toolInfo" v-show="showToolInfo">
+      <div class="info-list">
+        <div class="yuan-icon">
+          <i class="iconfont icon-cljk"></i>
+        </div>
+        <div class="info-detail">
+          <div class="detail-top">{{ company.zx }}</div>
+          <div class="detail-bottom">在线</div>
+        </div>
+      </div>
+      <div class="info-list">
+        <div class="yuan-icon">
+          <i class="iconfont icon-cljk"></i>
+        </div>
+        <div class="info-detail">
+          <div class="detail-top">{{ company.zk }}</div>
+          <div class="detail-bottom">载客</div>
+        </div>
+      </div>
+      <div class="info-list">
+        <div class="yuan-icon">
+          <i class="iconfont icon-cljk"></i>
+        </div>
+        <div class="info-detail">
+          <div class="detail-top">{{ company.kz }}</div>
+          <div class="detail-bottom">空载</div>
+        </div>
+      </div>
+      <div class="info-list">
+        <div class="small-echart">
+          <div id="chart" style="height: 100%"></div>
+        </div>
+        <div class="info-detail">
+          <div class="detail-top">{{ company.lv }}</div>
+          <div class="detail-bottom">实载率</div>
+        </div>
+      </div>
+    </div>
+    <div style="display:none">
+      <div class="tw-map-dialog-wrapper" ref="map-dialog">
+        <table>
+          <tr>
+            <td>
+              <b style="color:#3399FF"> 网约车-{{ mapDialog.vehino }} </b>
+            </td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><b>[所属公司]</b>：{{ mapDialog.vehName }}</td>
+          </tr>
+          <tr>
+            <td><b>[速度]</b>：{{ mapDialog.speed }}KM/H</td>
+          </tr>
+          <!--<tr>-->
+            <!--<td><b>[营运状态]</b>：{{ this.formatterType(mapDialog.bizStatus) }}</td>-->
+          <!--</tr>-->
+          <tr>
+            <td><b>[GPS时间]</b>：{{ this.formatterTableTime(mapDialog.dateTime) }}</td>
+          </tr>
+          <tr>
+            <td class="tw-map-dialog-btn" @click="handleMapDialogClick(mapDialog)">
+              历史轨迹
+            </td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { iconClassName, filterTablePage } from '../../assets/js/util'
+import { ajaxT } from 'util'
+import _ from 'underscore'
+import { setTimeout } from 'timers'
+import echarts from 'echarts'
+import AMap from 'AMap'
+import moment from 'moment'
+
+export default {
+  name: 'VehicleDynamicMonitor',
+  data() {
+    return {
+      mapDialog: {},
+      tabs: {
+        active: 'clxqlb'
+      },
+      toolDisplay: true,
+      page: {
+        pageSize: 15,
+        currentPage: 1,
+        total: 0,
+        data: [],
+        loading: false
+      },
+      editableTabsValue: '',
+      tabsValue: 'all',
+      showFlag: true,
+      infoFlag: false,
+      searchfor: '',
+      // vehicleAllList: [],
+      // vehicleCompanyList: [],
+      // vehicleList: [],
+      // noHGlist: [],
+      mapQueryPanel: false,
+      platformActive: 'all',
+      platformList: [
+        {
+          title: '卓卓1',
+          icon: 'icon-kefu',
+          data: { zx: 7310, zk: 2849, kz: 4461 }
+        },
+        {
+          title: '卓卓2',
+          icon: 'icon-taxi',
+          data: { zx: 2048, zk: 1588, kz: 460 }
+        },
+        {
+          title: '卓卓3',
+          icon: 'icon-key',
+          data: { zx: 2954, zk: 954, kz: 2000 }
+        },
+        {
+          title: '卓卓4',
+          icon: 'icon-ddzc',
+          data: { zx: 2954, zk: 954, kz: 2000 }
+        }
+      ],
+      map: {
+        // cluster: [],
+        markers: [],
+        infoWindow: null
+      },
+      mapScreen: {},
+      company: {
+        id: 'all',
+        zk: 0,
+        zx: 0,
+        kz: 0,
+        lv: '100%'
+      },
+      nowIndex: 0
+    }
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.map = new AMap.Map('gaodeMap', {
+        center: [106.230992, 38.487772],
+        zooms: [9, 18],
+        zoom: 10
+      })
+      this.getCompanyList()
+      this.getMapInfoByZoom(this.map.getZoom())
+      this.getVehicleLocation()
+      //地图缩放，移动事件
+      this.handleMapMouseZoom()
+    })
+  },
+  computed: {
+    showToolInfo() {
+      return this.infoFlag
+    },
+    // filterTableList() {
+    //   return filterTablePage({
+    //     data: this.page.data,
+    //     pageSize: this.page.pageSize,
+    //     currentPage: this.page.currentPage
+    //   })
+    // }
+  },
+  methods: {
+    getEchartData(){
+      ajaxT
+        .get('map/getEchartData', {
+          baseURL: this.baseURL,
+          params: {
+            companyid: this.platformActive
+          },
+        })
+        .then((res) => {
+          this.infoFlag = false
+          if(res.data.length === 1){
+            this.getEcharts(res.data[0])
+          }
+        })
+    },
+    getMapInfoByZoom(zoom){
+      if (zoom > 16) {
+        this.getVehicleByCoordinate(zoom)
+      }else{
+        this.getMapCluster(zoom)
+      }
+    },
+    getMapCluster(zoom){
+      this.map.clearMap()
+      let lev = this.zoomToLev(zoom)
+      ajaxT
+        .get('map/getMapCluster', {
+          baseURL: this.baseURL,
+          params: {
+            areatype: lev,
+            companyid: this.platformActive
+          },
+        })
+        .then((res) => {
+          if(res.data.length >0){
+            _.each(res.data, (item) => {
+              if (item.AREANUM > 0) this.getMarkerClusterer(item)
+            })
+          }
+        })
+    },
+    //地图zoom层级转化为lev（数据库表识别）
+    zoomToLev(zoom) {
+      if (zoom < 10) {
+        return 0
+      } else if (zoom >= 10 && zoom <= 11) {
+        return 1
+      } else if (zoom >= 12 && zoom <= 13) {
+        return 2
+      } else if (zoom >= 14 && zoom <= 16) {
+        return 3
+      }
+    },
+    //根据屏幕显示查询车辆定位
+    getVehicleByCoordinate(zoom){
+      if (zoom > 16) {
+        this.map.clearMap()
+        let maxlat = this.mapScreen.maxlat
+        let maxlng = this.mapScreen.maxlng
+        let minlat = this.mapScreen.minlat
+        let minlng = this.mapScreen.minlng
+        ajaxT
+          .get('map/getVehicleByCoordinate', {
+            baseURL: this.baseURL,
+            params: {
+              maxlat,
+              maxlng,
+              minlat,
+              minlng,
+              companyid: this.platformActive,
+              // num_time: 30*10000000,//30分钟在线
+              num_time: 30,//30分钟在线
+            },
+          })
+          .then((res) => {
+            if (res.data.length === 0) {
+              // this.$message.error('无数据！')
+            } else {
+              // _.each(res.data, (item) => {
+              //   this.markerClusterer(vehicles)
+              // })
+              this.markerClusterer(res.data)
+            }
+          })
+      }
+    },
+    //查询车辆及定位信息
+    getVehicleLocation(){
+      this.page.loading = true
+      ajaxT
+          .get('map/getVehicleLocation', {
+            baseURL: this.baseURL,
+            params: {
+              companyid: this.platformActive,
+              vhic: this.searchfor,
+              num_time: 30,//30分钟在线
+              // num_time: 30*10000000,//30分钟在线
+              page: this.page.currentPage,
+              pageSize: this.page.pageSize
+            }
+          })
+          .then(res => {
+            //所有公司车辆，选择公司的车辆，侧边栏展示的车辆
+            this.page.data = res.data
+            this.page.total = res.data.length===0? 0: res.data[0].C
+            this.page.loading = false
+          })
+    },
+    //点聚合打点
+    getMarkerClusterer(item){
+      let _this = this
+      AMapUI.loadUI(['overlay/SimpleMarker'], function (SimpleMarker) {
+        let simpleMarker = new SimpleMarker({
+          //设置节点属性
+          iconLabel: {
+            //普通文本
+            innerHTML: item.AREANUM,
+            //设置样式
+            style: {
+              color: '#fff',
+              fontSize: '100%',
+              // marginTop: '10px',
+              lineHeight: _this.setFontStyleByCount(item.AREANUM),
+              width: _this.setFontStyleByCount(item.AREANUM),
+            },
+          },
+          //自定义图标地址
+          iconStyle: {
+            src: _this.findPicByCount(item.AREANUM),
+            style: {
+              width: _this.setFontStyleByCount(item.AREANUM),
+              height: _this.setFontStyleByCount(item.AREANUM),
+            },
+          },
+          //设置基点偏移
+          // offset: new AMap.Pixel(-19, -60),
+          map: _this.map,
+          showPositionPoint: true,
+          position: [item.PX, item.PY],
+          zIndex: 100,
+        })
+        // simpleMarker.on('click', () => this.clickMarkerClusterer(item))
+      })
+    },
+    //点聚合打点-->根据点的车辆数据返回相应的字体样式
+    setFontStyleByCount(count) {
+      if (count >= 10000) {
+        return '80px'
+      } else if (count >= 1000 && count < 10000) {
+        return '70px'
+      } else {
+        return '50px'
+      }
+    },
+    //点聚合打点-->根据点的车辆数据返回相应的图标
+    findPicByCount(count) {
+      if (count >= 10000) {
+        return 'https://a.amap.com/jsapi_demos/static/images/red.png'
+      } else if (count >= 1000 && count < 10000) {
+        return 'https://a.amap.com/jsapi_demos/static/images/blue.png'
+      } else {
+        return 'https://a.amap.com/jsapi_demos/static/images/green.png'
+      }
+    },
+
+    //鼠标缩放地图事件
+    handleMapMouseZoom() {
+      //缩放
+      this.map.on('zoomend', () => {
+        this.getMapInfoByZoom(this.map.getZoom())
+        console.info('地图zoom=', this.map.getZoom())
+      })
+
+      //第一次地图不动
+      let bounds = this.map.getBounds()
+      this.mapScreen.maxlat = parseFloat(bounds.northeast.lat)
+      this.mapScreen.maxlng = parseFloat(bounds.northeast.lng)
+      this.mapScreen.minlat = parseFloat(bounds.southwest.lat)
+      this.mapScreen.minlng = parseFloat(bounds.southwest.lng)
+      console.info('监控范围=', this.mapScreen)
+      //移动
+      this.map.on('moveend', () => {
+        bounds = this.map.getBounds()
+        this.mapScreen.maxlat = parseFloat(bounds.northeast.lat)
+        this.mapScreen.maxlng = parseFloat(bounds.northeast.lng)
+        this.mapScreen.minlat = parseFloat(bounds.southwest.lat)
+        this.mapScreen.minlng = parseFloat(bounds.southwest.lng)
+        console.info('监控范围=', this.mapScreen)
+        this.getVehicleByCoordinate(this.map.getZoom())
+      })
+    },
+
+    handleMapDialogClick(item) {
+      this.$router.push({
+        name: '历史轨迹',
+        params: { vehi_no: item.vehino + '(' + item.vehName + ')' }
+      })
+    },
+    handleTablePageCurrentChange(index) {
+      this.page.currentPage = index
+      this.getVehicleLocation()
+    },
+    handleMapBtnClick() {
+      this.toolDisplay = !this.toolDisplay
+      if (!this.toolDisplay) this.infoFlag = false
+    },
+    // 图标格式化
+    formatterIcon(id) {
+      return '#icon-' + id
+    },
+    //公司点击事件
+    clickItem(t) {
+      this.platformActive = t.name
+      // this.getEchartData()
+      this.getMapInfoByZoom(this.map.getZoom())
+      this.getVehicleLocation()
+    },
+    getEcharts(data){
+        this.company.id = data.COMPANYID
+        this.company.kz = data.EMAPY_NUM
+        this.company.zk = data.HEAVY_NUM
+        this.company.zx = data.ONLINE_NUM
+        this.company.lv = (data.HEAVY_NUM/data.ONLINE_NUM*100).toFixed(2)+'%'
+        this.infoFlag = true
+        this.$refs['toolInfo'].style.width = this.$refs['mapTool'].offsetWidth + 30 + 'px'
+        setTimeout(() => {
+          let color = ['#00bff3', '#e6f4f7']
+          this.leftEChart = echarts.init(document.getElementById('chart'))
+          this.leftEChart.setOption({
+            series: [
+              {
+                name: '访问来源',
+                type: 'pie',
+                radius: '90%',
+                center: ['50%', '50%'],
+                color: color,
+                startAngle: 10,
+                data: [
+                  {
+                    value: this.company.lv.substring(0, this.company.lv.length - 1),
+                    name: '直接访问'
+                  },
+                  {
+                    value: 100 - this.company.lv.substring(0, this.company.lv.length - 1),
+                    name: '直接访问1'
+                  }
+                ],
+                itemStyle: {
+                  normal: {
+                    label: {
+                      show: false
+                    },
+                    labelLine: {
+                      show: false
+                    }
+                  }
+                }
+              }
+            ]
+          })
+        }, 500)
+    },
+    iconClassName,
+    handleSearchForClick() {
+      this.page.currentPage =1
+      if (this.searchfor.length < 3&&this.searchfor.length > 0) {
+      } else {
+        this.getVehicleLocation()
+      }
+    },
+    //获取公司信息
+    getCompanyList() {
+      ajaxT
+        .get('map/getCompany', {
+          baseURL: this.baseURL
+        })
+        .then(res => {
+          this.platformList = res.data
+        })
+    },
+    //点聚合
+    markerClusterer(vehicles) {
+      _.each(vehicles, item => {
+        let marker = new AMap.Marker({
+          position: [item.longi, item.lati],
+          icon: this.findPicByMdtNo(item),
+          offset: new AMap.Pixel(-15, -15)
+        })
+        marker.on('click', () => this.markerVehicle(item))
+        marker.setMap(this.map)
+      })
+      // if (this.map.infoWindow) {
+      //   this.map.infoWindow.setMap(null)
+      // }
+      // if (this.map.cluster) {
+      //   this.map.cluster.setMap(null)
+      // }
+      // this.map.markers = _.map(vehicles, item => {
+      //   let marker = new AMap.Marker({
+      //     position: [item.longi, item.lati],
+      //     icon: this.findPicByMdtNo(item),
+      //     offset: new AMap.Pixel(-15, -15)
+      //   })
+      //   marker.on('click', () => this.markerVehicle(item))
+      //   return marker
+      // })
+      // let _this = this
+      // _this.map.plugin(['AMap.MarkerClusterer'], function() {
+      //   _this.map.cluster = new AMap.MarkerClusterer(_this.map, _this.map.markers, {
+      //     gridSize: 80,
+      //     minClusterSize: 2,
+      //     maxZoom: 15
+      //   })
+      // })
+    },
+    //地图打点图形
+    findPicByMdtNo(item) {
+      let address = ''
+      if (item.mdt_no === 'didi') {
+        /*if (item.legal === '0') address = 'image/marker/ddh.png'
+        else*/ address = 'image/marker/dd.png'
+      } else if (item.mdt_no === 'shenzhou') {
+        if (item.legal === '0') address = 'image/marker/szh.png'
+        else address = 'image/marker/sz.png'
+      } else if (item.mdt_no === 'caocao') {
+        if (item.legal === '0') address = 'image/marker/cch.png'
+        else address = 'image/marker/cc.png'
+      } else if (item.mdt_no === 'yidao') {
+        if (item.legal === '0') address = 'image/marker/ydh.png'
+        else address = 'image/marker/yd.png'
+      } else if (item.mdt_no === 'aa') {
+        if (item.legal === '0') address = 'image/marker/aah.png'
+        else address = 'image/marker/aa.png'
+      } else if (item.mdt_no === 'yangguangchedao') {
+        if (item.legal === '0') address = 'image/marker/ygh.png'
+        else address = 'image/marker/yg.png'
+      } else if (item.mdt_no === 'wanshun') {
+        if (item.legal === '0') address = 'image/marker/wsh.png'
+        else address = 'image/marker/ws.png'
+      } else if (item.mdt_no === 'shouyue') {
+        /*if (item.legal === '0') address = 'image/marker/syh.png'
+        else*/ address = 'image/marker/sy.png'
+      } else if (item.mdt_no === 'TJHT') {
+        /* if (item.legal === '0') address = 'image/marker/xcych.png'
+        else */address = 'image/marker/xcyc.png'
+      } else if (item.mdt_no === 'hhyc') {
+        if (item.legal === '0') address = 'image/marker/hhdch.png'
+        else address = 'image/marker/hhdc.png'
+      } else if (item.mdt_no === 'tongcheng') {
+        if (item.legal === '0') address = 'image/marker/mzdch.png'
+        else address = 'image/marker/mzdc.png'
+      } else if (item.mdt_no === 'dccx') {
+        if (item.legal === '0') address = 'image/marker/dccxh.png'
+        else address = 'image/marker/dccx.png'
+      } else if (item.mdt_no === 'xiehua') {
+        if (item.legal === '0') address = 'image/marker/xhcxh.png'
+        else address = 'image/marker/xhcx.png'
+      } else if (item.mdt_no === 'xiangdao') {
+        if (item.legal === '0') address = 'image/marker/xdcxh.png'
+        else address = 'image/marker/xdcx.png'
+      } else if (item.mdt_no === 'weixing') {
+        if (item.legal === '0') address = 'image/marker/ycxh.png'
+        else address = 'image/marker/ycx.png'
+      } else if (item.mdt_no === 'tmcx') {
+        if (item.legal === '0') address = 'image/marker/tmcxh.png'
+        else address = 'image/marker/tmcx.png'
+      } else if (item.mdt_no === 'gscx') {
+        if (item.legal === '0') address = 'image/marker/gscxh.png'
+        else address = 'image/marker/gscx.png'
+      } else if (item.mdt_no === 'jbyy') {
+        if (item.legal === '0') address = 'image/marker/jbyyh.png'
+        else address = 'image/marker/jbyy.png'
+      } else if (item.mdt_no === 'lvcheng') {
+        if (item.legal === '0') address = 'image/marker/lcych.png'
+        else address = 'image/marker/lcyc.png'
+      } else if (item.mdt_no === 'T3') {
+        if (item.legal === '0') address = 'image/marker/t3cxh.png'
+        else address = 'image/marker/t3cx.png'
+      } else if (item.mdt_no === 'tfcx') {
+        if (item.legal === '0') address = 'image/marker/tfcxh.png'
+        else address = 'image/marker/tfcx.png'
+      } else if (item.mdt_no === 'tuotuo') {
+        if (item.legal === '0') address = 'image/marker/ttexh.png'
+        else address = 'image/marker/ttex.png'
+      } else if (item.mdt_no === 'yicheng') {
+        if (item.legal === '0') address = 'image/marker/yccxh.png'
+        else address = 'image/marker/yccx.png'
+      }
+      else if (item.mdt_no === 'T6') {
+        //T6出行
+        address = 'image/marker/t6cx.png'
+      } else if (item.mdt_no === 'ningxia') {
+        //宁夏出行
+        address = 'image/marker/nxcx.png'
+      } else if (item.mdt_no === 'chuangyezhe') {
+        //创业者出行
+        address = 'image/marker/cyzcx.png'
+      } else if (item.mdt_no === 'changbu') {
+        //畅步
+        address = 'image/marker/cb.png'
+      }
+      // else if (item.mdt_no === 'TJHT') {
+      //   //去哪儿专车
+      //   address = 'image/marker/yccx.png'
+      // } else if (item.mdt_no === 'shouyue') {
+      //   //首汽约车
+      //   address = 'image/marker/yccx.png'
+      // }
+      return address
+    },
+    //地图信息弹框
+    markerVehicle(item) {
+      this.mapDialog = item
+      this.map.setCenter([item.longi, item.lati])
+      this.map.infoWindow = new AMap.InfoWindow({
+        offset: new AMap.Pixel(0, -16),
+        content: this.$refs['map-dialog']
+      })
+      setTimeout(() => {
+        this.map.infoWindow.open(this.map, [item.longi, item.lati])
+      },0.5 * 1000)
+    },
+    formatterTableTime(val) {
+      return (val && moment(val).format('YYYY-MM-DD HH:mm:ss')) || ''
+    },
+    formatterType(type) {
+      type = parseInt(type)
+      if (type === 1) return '载客'
+      else if (type === 2) return '接单'
+      else if (type === 3) return '空驶'
+      else if (type === 4) return '停运'
+    },
+    //车辆点击事件
+    handleVehicleClick(item) {
+      this.map.setZoom(18)
+      ajaxT
+        .get('map/getVehicleLocation', {
+          baseURL: this.baseURL,
+          params: {
+            companyid: this.platformActive,
+            vhic: item.vehino,
+            page: 1,
+            pageSize: this.page.pageSize
+          }
+        })
+        .then(res => {
+          let marker = new AMap.Marker({
+            position: [res.data[0].longi, res.data[0].lati],
+            icon: this.findPicByMdtNo(res.data[0]),
+            offset: new AMap.Pixel(-15, -15)
+          })
+          setTimeout(() => {
+            marker.setMap(this.map)
+          },0.5 * 1000)
+          this.markerVehicle(res.data[0])
+        })
+    },
+    //历史轨迹
+    handleVehiclelsgj(item) {
+      this.$router.push({
+        name: '历史轨迹',
+        params: { vehi_no: item.vehino + '(' + item.vehName + ')' }
+      })
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+@import '../../assets/css/variable';
+
+$font-color: #374873;
+$border-color: #69a7f7;
+.tw-template-wrapper {
+  overflow: hidden;
+}
+.tw-map {
+  &-list {
+    float: left;
+    width: 300px;
+    padding: 5px;
+    height: 100%;
+    box-sizing: border-box;
+    border-right: 1px solid $border-color;
+  }
+}
+
+.list-title {
+  height: 50px;
+  text-align: center;
+
+  span {
+    line-height: 50px;
+    font-size: 16px;
+    color: $font-color;
+    font-weight: 700;
+  }
+}
+
+.tw-list-item {
+  position: relative;
+  color: $font-color;
+  font-weight: 600;
+  font-size: 14px;
+  line-height: 45px;
+  i {
+    padding-left: 20px;
+  }
+  span {
+    font-size: 16px;
+    padding: 0 40px 0 60px;
+  }
+  .tw-li_btn {
+    position: absolute;
+    right: 20px;
+    top: 6.5px;
+  }
+}
+
+.tw-icon-platform {
+  padding-left: 20px;
+  transform: translate(-50%, -50%);
+}
+
+.tw-map-box {
+  position: relative;
+  box-sizing: border-box;
+  float: left;
+  width: calc(100% - 300px);
+  height: 100%;
+  background-color: #cccccc;
+}
+
+/*地图工具栏*/
+.map-tool {
+  width: 760px;
+  box-shadow: 0px -1px 3px #000000;
+}
+
+/*工具栏公司排版*/
+.tool-comp {
+  height: 50px;
+  width: 80px;
+  position: relative;
+  text-align: center;
+  box-sizing: border-box;
+  display: block;
+  background-color: #ffffff;
+  transition: width 0.6s ease;
+  cursor: pointer;
+
+  &.active {
+    background-color: #384a6e;
+    color: #ffffff;
+  }
+
+  &:after {
+    content: '';
+    height: 20px;
+    width: 1px;
+    background-color: #cccccc;
+    position: absolute;
+    right: 0;
+    top: 15px;
+  }
+
+  i {
+    position: absolute;
+    top: 6px;
+    right: 20px;
+    left: 20px;
+    font-size: 20px;
+  }
+
+  span {
+    position: absolute;
+    bottom: 5px;
+    left: 0;
+    right: 0;
+  }
+}
+
+/*动画*/
+.tool-comp {
+  &.show {
+    &:first-child {
+      background-color: #ffffff;
+      color: #ffffff;
+    }
+
+    &:after {
+      background-color: transparent;
+    }
+
+    width: 0;
+
+    & > i,
+    & > span {
+      color: #ffffff;
+      display: none;
+    }
+  }
+}
+
+/*工具栏收缩按钮*/
+.tw-tool-btn {
+  float: right;
+  height: 50px;
+  width: 50px;
+  text-align: right;
+  font-size: 25px;
+  background-color: #ffffff;
+
+  i {
+    font-size: 30px;
+    line-height: 50px;
+    color: #6ddb9e;
+    cursor: pointer;
+  }
+}
+
+.tool-info {
+  position: absolute;
+  top: 103px;
+  right: 0px;
+  box-sizing: border-box;
+  background-color: #384a6e;
+  height: 50px;
+}
+
+.tool-box {
+  position: absolute;
+  right: 0;
+  top: 10px;
+}
+
+/*	全部 的样式*/
+.info-list {
+  height: 50px;
+  float: left;
+  line-height: 50px;
+  display: flex;
+  align-items: center;
+  padding-left: 10px;
+}
+
+.info-detail {
+  height: 100%;
+  box-sizing: border-box;
+  width: 60px;
+  color: #ffffff;
+  padding: 5px;
+}
+
+.detail {
+  &-top {
+    text-align: center;
+    line-height: 24px;
+    border-bottom: 1px solid #ffffff;
+    box-sizing: border-box;
+  }
+
+  &-bottom {
+    text-align: center;
+    line-height: 20px;
+  }
+}
+
+.small-echart {
+  width: 50px;
+  height: 50px;
+}
+
+.yuan-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 20px;
+  border: 1px solid greenyellow;
+  text-align: center;
+
+  i {
+    color: #ffffff;
+    line-height: 40px;
+    font-size: 30px;
+  }
+}
+
+// 地图工具栏 伸缩样式
+.tw-tool_btn {
+  width: 30px;
+  height: 52px;
+  background-color: #ffffff;
+  .el-icon-arrow-right {
+    font-size: 30px;
+    line-height: 50px;
+    color: #6ddb9e;
+    cursor: pointer;
+  }
+}
+.tw-template-wrapper {
+  display: flex;
+}
+.tw-map-list {
+  box-sizing: border-box;
+  width: 300px;
+  padding: 5px;
+  height: 100%;
+  border-right: 1px solid #a8cbfb;
+}
+.tw-tabs-content {
+  height: calc(100% - 41px);
+}
+.tw-search_tabs {
+  padding: 10px;
+}
+.tw-list {
+  height: calc(100% - 86px);
+  overflow: auto;
+}
+.tw-map-content {
+  position: relative;
+  height: 100%;
+  width: calc(100% - 300px);
+  #map {
+    height: 100%;
+    width: 100%;
+  }
+}
+// 地图工具栏
+.tw-map-tool {
+  position: absolute;
+  top: 10px;
+  right: 0px;
+  display: flex;
+}
+.iconfont {
+  fill: currentColor;
+  overflow: hidden;
+  margin-top: 5px;
+}
+
+.tw-tool_tabs {
+  .tw-title {
+    line-height: 20px;
+  }
+  .tw-tabs-label {
+    height: 50px;
+    width: 80px;
+  }
+}
+// 地图工具栏 伸缩样式
+.tw-tool_btn {
+  z-index: 3;
+  width: 30px;
+  height: 52px;
+  background-color: #ffffff;
+  .el-icon-arrow-right {
+    font-size: 30px;
+    line-height: 50px;
+    color: #6ddb9e;
+    cursor: pointer;
+  }
+}
+// 地图工具栏 列表
+.tw-tool_list {
+  position: absolute;
+  left: -649px;
+  overflow: hidden;
+  max-width: 649px;
+}
+.tool-enter-active,
+.tool-leave-active {
+  transition: left 0.5s;
+}
+.tool-enter, .tool-leave-to /* .fade-leave-active below version 2.1.8 */ {
+  left: 0;
+}
+// 历史轨迹按钮样式
+.tw-map-dialog-btn {
+  color: rgb(51, 153, 255);
+  cursor: pointer;
+  line-height: 25px;
+  &:hover {
+    text-decoration: underline;
+  }
+}
+// 地图infowindow样式
+.tw-map-dialog-wrapper {
+  width: 290px;
+  td {
+    font-size: 19px;
+  }
+}
+</style>

@@ -1,0 +1,66 @@
+{
+  "data": [
+    {
+      "id": "yydtjg",
+      "title": "营运动态监管",
+      "fullPath": "/yydtjg",
+      "icon": "icon-rcyj",
+      "children": [
+        {
+          "id": "dtjk",
+          "title": "动态监控",
+          "href": "/yydtjg/dtjk",
+          "icon": "icon-rcyj"
+        },
+        {
+          "id": "qyjk",
+          "title": "区域监控",
+          "href": "/yydtjg/qyjk",
+          "icon": "icon-rcyj"
+        }
+      ]
+    },
+    {
+      "id": "fzjczc",
+      "title": "辅助决策支撑",
+      "fullPath": "/fzjczc",
+      "icon": "icon-rcyj",
+      "children": [
+        {
+          "id": "hyzl",
+          "title": "行业总览",
+          "href": "/fzjczc/hyzl",
+          "icon": "icon-rcyj"
+        }
+      ]
+    },
+    {
+      "id": "jtbsj",
+      "title": "交通部数据",
+      "fullPath": "/jtbsj",
+      "icon": "icon-rcyj",
+      "children": [
+        {
+          "id": "jtsjcx",
+          "title": "静态数据查询",
+          "fullPath": "/jtbsj/jtsjcx",
+          "icon": "icon-rcyj",
+          "children": [
+            {
+              "id": "ptgsjbxxb",
+              "title": "平台公司基本信息表",
+              "href": "/jtbsj/jtsjcx/ptgsjbxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "yygmxxb",
+              "title": "营运规模信息表",
+              "href": "/jtbsj/jtsjcx/yygmxxb",
+              "icon": "icon-rcyj"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,315 @@
+{
+  "data": [
+    {
+      "id": "yingyunzonglan",
+      "title": "营运总览",
+      "fullPath": "/yingyunzonglan",
+      "icon": "icon-rcyj",
+      "children": []
+    },
+    {
+      "id": "yydtjg",
+      "title": "营运动态监管",
+      "fullPath": "/yydtjg",
+      "icon": "icon-rcyj",
+      "children": [
+        {
+          "id": "dtjk",
+          "title": "动态监控",
+          "href": "/yydtjg/dtjk",
+          "icon": "icon-rcyj"
+        },
+        {
+          "id": "qyjk",
+          "title": "区域监控",
+          "href": "/yydtjg/qyjk",
+          "icon": "icon-rcyj"
+        },
+        {
+          "id": "lsgj",
+          "title": "历史轨迹",
+          "href": "/yydtjg/lsgj",
+          "icon": "icon-rcyj"
+        },
+        {
+          "id": "qygl",
+          "title": "区域管理",
+          "href": "/yydtjg/qygl",
+          "icon": "icon-rcyj"
+        }
+      ]
+    },
+    {
+      "id": "fzjczc",
+      "title": "辅助决策支撑",
+      "fullPath": "/fzjczc",
+      "icon": "icon-rcyj",
+      "children": [
+        {
+          "id": "hyzl",
+          "title": "行业总览",
+          "href": "/fzjczc/hyzl",
+          "icon": "icon-rcyj"
+        },
+        {
+          "id": "zhxxcx",
+          "title": "综合信息查询",
+          "fullPath": "/fzjczc/zhxxcx",
+          "icon": "icon-rcyj",
+          "children": [
+            {
+              "id": "tsmbcx",
+              "title": "特殊目标查询",
+              "href": "/fzjczc/zhxxcx/tsmbcx",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "zhddcx",
+              "title": "综合订单查询",
+              "href": "/fzjczc/zhxxcx/zhddcx",
+              "icon": "icon-rcyj"
+            }
+          ]
+        },
+        {
+          "id": "hyyxfx",
+          "title": "行业运行分析",
+          "fullPath": "/fzjczc/hyyxfx",
+          "icon": "icon-rcyj",
+          "children": [
+            {
+              "id": "ycjytj",
+              "title": "异常经营统计",
+              "href": "/fzjczc/hyyxfx/ycjytj",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "ylfxbg",
+              "title": "运力分析报告",
+              "href": "/fzjczc/hyyxfx/ylfxbg",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "dcsyfx",
+              "title": "单车收益分析",
+              "href": "/fzjczc/hyyxfx/dcsyfx",
+              "icon": "icon-rcyj"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "jtbsj",
+      "title": "交通部数据",
+      "fullPath": "/jtbsj",
+      "icon": "icon-rcyj",
+      "children": [
+        {
+          "id": "jtsjcx",
+          "title": "静态数据查询",
+          "fullPath": "/jtbsj/jtsjcx",
+          "icon": "icon-rcyj",
+          "children": [
+            {
+              "id": "ptgsjbxxb",
+              "title": "平台公司基本信息表",
+              "href": "/jtbsj/jtsjcx/ptgsjbxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "yygmxxb",
+              "title": "营运规模信息表",
+              "href": "/jtbsj/jtsjcx/yygmxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "ptgszfxxb",
+              "title": "平台公司支付信息表",
+              "href": "/jtbsj/jtsjcx/ptgszfxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "ptgsfwjgb",
+              "title": "平台公司服务机构表",
+              "href": "/jtbsj/jtsjcx/ptgsfwjgb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "ptgsjyxkb",
+              "title": "平台公司经营许可表",
+              "href": "/jtbsj/jtsjcx/ptgsjyxkb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "ptgsyjxxb",
+              "title": "平台公司运价信息表",
+              "href": "/jtbsj/jtsjcx/ptgsyjxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "cljbxxb",
+              "title": "车辆基本信息表",
+              "href": "/jtbsj/jtsjcx/cljbxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "clbxxxb",
+              "title": "车辆保险信息表",
+              "href": "/jtbsj/jtsjcx/clbxxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "cllcxxb",
+              "title": "车辆里程信息表",
+              "href": "/jtbsj/jtsjcx/cllcxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "jsyjbxxb",
+              "title": "驾驶员基本信息表",
+              "href": "/jtbsj/jtsjcx/jsyjbxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "jsypxxxb",
+              "title": "驾驶员培训信息表",
+              "href": "/jtbsj/jtsjcx/jsypxxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "jsyydzdb",
+              "title": "驾驶员移动终端表",
+              "href": "/jtbsj/jtsjcx/jsyydzdb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "jsytjxxb",
+              "title": "驾驶员统计信息表",
+              "href": "/jtbsj/jtsjcx/jsytjxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "ckjbxxb",
+              "title": "乘客基本信息表",
+              "href": "/jtbsj/jtsjcx/ckjbxxb",
+              "icon": "icon-rcyj"
+            }
+          ]
+        },
+        {
+          "id": "dtsjcx",
+          "title": "动态数据查询",
+          "fullPath": "/jtbsj/dtsjcx",
+          "icon": "icon-rcyj",
+          "children": [
+            {
+              "id": "ddfqb",
+              "title": "订单发起表",
+              "href": "/jtbsj/dtsjcx/ddfqb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "ddcgb",
+              "title": "订单成功表",
+              "href": "/jtbsj/dtsjcx/ddcgb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "ddcxb",
+              "title": "订单撤销表",
+              "href": "/jtbsj/dtsjcx/ddcxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "cljysxb",
+              "title": "车辆经营上线表",
+              "href": "/jtbsj/dtsjcx/cljysxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "cljyxxb",
+              "title": "车辆经营下线表",
+              "href": "/jtbsj/dtsjcx/cljyxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "jycfb",
+              "title": "经营出发表",
+              "href": "/jtbsj/dtsjcx/jycfb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "jyddb",
+              "title": "经营到达表",
+              "href": "/jtbsj/dtsjcx/jyddb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "jyzfb",
+              "title": "经营支付表",
+              "href": "/jtbsj/dtsjcx/jyzfb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "jsydwb",
+              "title": "驾驶员定位表",
+              "href": "/jtbsj/dtsjcx/jsydwb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "cldwb",
+              "title": "车辆定位表",
+              "href": "/jtbsj/dtsjcx/cldwb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "ckpjxxb",
+              "title": "乘客评价信息表",
+              "href": "/jtbsj/dtsjcx/ckpjxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "cktsxxb",
+              "title": "乘客投诉信息表",
+              "href": "/jtbsj/dtsjcx/cktsxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "jsycfxxb",
+              "title": "驾驶员处罚信息表",
+              "href": "/jtbsj/dtsjcx/jsycfxxb",
+              "icon": "icon-rcyj"
+            },
+            {
+              "id": "jsyxxb",
+              "title": "驾驶员信誉表",
+              "href": "/jtbsj/dtsjcx/jsyxxb",
+              "icon": "icon-rcyj"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "yonghuguanli",
+      "title": "用户管理",
+      "fullPath": "/yonghuguanli",
+      "icon": "icon-rcyj",
+      "children": [
+        {
+          "id": "yh",
+          "title": "用户",
+          "href": "/yonghuguanli/yh",
+          "icon": "icon-rcyj"
+        },
+        {
+          "id": "qx",
+          "title": "权限",
+          "href": "/yonghuguanli/qx",
+          "icon": "icon-rcyj"
+        }
+      ]
+    }
+  ]
+}

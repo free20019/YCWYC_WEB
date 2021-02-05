@@ -1,0 +1,235 @@
+import Vue from 'vue'
+import VueRouter from 'vue-router'
+import Home from '../views/Home.vue'
+
+Vue.use(VueRouter)
+
+const routes = [
+  {
+    path: '/',
+    name: '首页',
+    component: () => import('views/Index.vue'),
+    // redirect: { path: '/yxgb', name: '优秀年轻干部报表' },
+    children: [
+      {
+        path: '/yingyunzonglan',
+        name: '营运总览',
+        component: () => import('views/OperationOverview.vue')
+      },
+      {
+        path: '/yydtjg/dtjk',
+        name: '动态监控',
+        component: () => import('views/OperationDynamicSupervision/DynamicMonitoring.vue')
+      },
+      {
+        path: '/yydtjg/qyjk',
+        name: '区域监控',
+        component: () => import('views/OperationDynamicSupervision/AreaMonitoring.vue')
+      },
+      {
+        path: '/yydtjg/lsgj',
+        name: '历史轨迹',
+        component: () => import('views/OperationDynamicSupervision/HistoricalTrack.vue')
+      },
+      {
+        path: '/yydtjg/qygl',
+        name: '区域管理',
+        component: () => import('views/OperationDynamicSupervision/RegionalManagement.vue')
+      },
+      {
+        path: '/fzjczc/hyzl',
+        name: '行业总览',
+        component: () => import('views/AssistantDecisionSupport/IndustryOverview.vue')
+      },
+      {
+        path: '/fzjczc/zhxxcx/tsmbcx',
+        name: '特殊目标查询',
+        component: () =>
+          import('views/AssistantDecisionSupport/ComprehensiveInformationQuery/SpecialTargetQuery.vue')
+      },
+      {
+        path: '/fzjczc/zhxxcx/zhddcx',
+        name: '综合订单查询',
+        component: () =>
+          import('views/AssistantDecisionSupport/ComprehensiveInformationQuery/ComprehensiveOrderQuery.vue')
+      },
+      {
+        path: '/fzjczc/hyyxfx/ycjytj',
+        name: '异常经营统计',
+        component: () =>
+          import('views/AssistantDecisionSupport/IndustryOperationAnalysis/AbnormalOperationStatistics.vue')
+      },
+      {
+        path: '/fzjczc/hyyxfx/ylfxbg',
+        name: '运力分析报告',
+        component: () =>
+          import('views/AssistantDecisionSupport/IndustryOperationAnalysis/CapacityAnalysisReport.vue')
+      },
+      {
+        path: '/fzjczc/hyyxfx/dcsyfx',
+        name: '单车收益分析',
+        component: () =>
+          import('views/AssistantDecisionSupport/IndustryOperationAnalysis/BicycleRevenueAnalysis.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/ptgsjbxxb',
+        name: '平台公司基本信息表',
+        component: () => import('views/MinistryOfTransportData/StaticData/CompanyBasicInformation.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/yygmxxb',
+        name: '营运规模信息表',
+        component: () => import('views/MinistryOfTransportData/StaticData/BusinessOperationInformation.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/ptgszfxxb',
+        name: '平台公司支付信息表',
+        component: () => import('views/MinistryOfTransportData/StaticData/PlatformCompanyPay.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/ptgsfwjgb',
+        name: '平台公司服务机构表',
+        component: () =>
+          import('views/MinistryOfTransportData/StaticData/PlatformCompanyServiceOrganization.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/ptgsjyxkb',
+        name: '平台公司经营许可表',
+        component: () => import('views/MinistryOfTransportData/StaticData/PlatformCompanyBusinessLicense.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/ptgsyjxxb',
+        name: '平台公司运价信息表',
+        component: () => import('views/MinistryOfTransportData/StaticData/PlatformCompanyRate.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/cljbxxb',
+        name: '车辆基本信息表',
+        component: () => import('views/MinistryOfTransportData/StaticData/CarBasicInfo.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/clbxxxb',
+        name: '车辆保险信息表',
+        component: () => import('views/MinistryOfTransportData/StaticData/VehicleInsuranceInformation.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/cllcxxb',
+        name: '车辆里程信息表',
+        component: () => import('views/MinistryOfTransportData/StaticData/VehicleMileageInformation.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/jsyjbxxb',
+        name: '驾驶员基本信息表',
+        component: () => import('views/MinistryOfTransportData/StaticData/DriverBasicInformation.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/jsypxxxb',
+        name: '驾驶员培训信息表',
+        component: () => import('views/MinistryOfTransportData/StaticData/DriverTrainInformation.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/jsyydzdb',
+        name: '驾驶员移动终端表',
+        component: () =>
+          import('views/MinistryOfTransportData/StaticData/DriverMobileTerminalInformation.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/jsytjxxb',
+        name: '驾驶员统计信息表',
+        component: () => import('views/MinistryOfTransportData/StaticData/DriverStatistics.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/ckjbxxb',
+        name: '乘客基本信息表',
+        component: () => import('views/MinistryOfTransportData/StaticData/PassengersBasicInformation.vue')
+      },
+      {
+        path: '/jtbsj/dtsjcx/ddfqb',
+        name: '订单发起表',
+        component: () => import('views/MinistryOfTransportData/DynamicData/OrderInitiation.vue')
+      },
+      {
+        path: '/jtbsj/dtsjcx/ddcgb',
+        name: '订单成功表',
+        component: () => import('views/MinistryOfTransportData/DynamicData/OrderSuccess.vue')
+      },
+      {
+        path: '/jtbsj/dtsjcx/ddcxb',
+        name: '订单撤销表',
+        component: () => import('views/MinistryOfTransportData/DynamicData/OrderCancel.vue')
+      },
+      {
+        path: '/jtbsj/dtsjcx/cljysxb',
+        name: '车辆经营上线表',
+        component: () => import('views/MinistryOfTransportData/DynamicData/VehicleOperationOnline.vue')
+      },
+      {
+        path: '/jtbsj/dtsjcx/cljyxxb',
+        name: '车辆经营下线表',
+        component: () => import('views/MinistryOfTransportData/DynamicData/VehicleOperationOffline.vue')
+      },
+      {
+        path: '/jtbsj/dtsjcx/jycfb',
+        name: '经营出发表',
+        component: () => import('views/MinistryOfTransportData/DynamicData/BusinessStarting.vue')
+      },
+      {
+        path: '/jtbsj/dtsjcx/jyddb',
+        name: '经营到达表',
+        component: () => import('views/MinistryOfTransportData/DynamicData/BusinessArrival.vue')
+      },
+      {
+        path: '/jtbsj/dtsjcx/jyzfb',
+        name: '经营支付表',
+        component: () => import('views/MinistryOfTransportData/DynamicData/BusinessPay.vue')
+      },
+      {
+        path: '/jtbsj/dtsjcx/jsydwb',
+        name: '驾驶员定位表',
+        component: () => import('views/MinistryOfTransportData/DynamicData/DriverGPS.vue')
+      },
+      {
+        path: '/jtbsj/dtsjcx/cldwb',
+        name: '车辆定位表',
+        component: () => import('views/MinistryOfTransportData/DynamicData/VehicleGPS.vue')
+      },
+      {
+        path: '/jtbsj/dtsjcx/ckpjxxb',
+        name: '乘客评价信息表',
+        component: () =>
+          import('views/MinistryOfTransportData/DynamicData/PassengerEvaluationInformation.vue')
+      },
+      {
+        path: '/jtbsj/dtsjcx/cktsxxb',
+        name: '乘客投诉信息表',
+        component: () => import('views/MinistryOfTransportData/DynamicData/PassengerComplaintInformation.vue')
+      },
+      {
+        path: '/jtbsj/dtsjcx/jsycfxxb',
+        name: '驾驶员处罚信息表',
+        component: () => import('views/MinistryOfTransportData/DynamicData/DriverPenaltyInformation.vue')
+      },
+      {
+        path: '/jtbsj/dtsjcx/jsyxxb',
+        name: '驾驶员信誉表',
+        component: () => import('views/MinistryOfTransportData/DynamicData/DriverReputation.vue')
+      },
+      {
+        path: '/yonghuguanli/yh',
+        name: '用户',
+        component: () => import('views/UserManage/User.vue')
+      },
+      {
+        path: '/yonghuguanli/qx',
+        name: '权限',
+        component: () => import('views/UserManage/Power.vue')
+      }
+    ]
+  }
+]
+
+const router = new VueRouter({
+  routes
+})
+
+export default router

@@ -1,0 +1,392 @@
+<!--越区经营预警-->
+<template>
+  <div class="tw-template-wrapper" @mousemove="handleMouseMove" @mouseup="handleMouseUp" ref="wrapper">
+    <div class="map-box" ref="moveMap">
+      <div id="gaodeMap" style="height:100%"></div>
+    </div>
+    <div class="query-table" ref="moveTable">
+      <div class="move-line" @mousedown="handleMouseDown"></div>
+      <el-form :inline="true" size="mini" ref="queryBar">
+        <el-form-item>
+          <el-select v-model="query.company" clearable placeholder="平台名称">
+            <el-option
+              v-for="item in companyList"
+              :label="item.ABB_NAME"
+              :key="item.COMPANYID"
+              :value="item.COMPANYID"
+            ></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-autocomplete
+            v-model="query.vehino"
+            :fetch-suggestions="queryVehicleSearch"
+            placeholder="车牌号码"
+            :trigger-on-focus="false"
+            clearable
+          ></el-autocomplete>
+        </el-form-item>
+        <el-form-item>
+          <el-date-picker type="datetime" v-model="query.stime" placeholder="开始时间"></el-date-picker>
+        </el-form-item>
+        <el-form-item>
+          <el-date-picker type="datetime" v-model="query.etime" placeholder="结束时间"></el-date-picker>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="getOrder">查询</el-button>
+        </el-form-item>
+      </el-form>
+      <div ref="queryPanel" v-loading="loading">
+        <el-table :data="table.order" border size="mini" height="100%" @row-click="getHistor">
+          <el-table-column prop="ABB_NAME" label="平台名称" width="120"></el-table-column>
+          <el-table-column prop="ORDERID" label="订单编号" width="120"></el-table-column>
+          <el-table-column prop="DRIVERNAME" label="驾驶员姓名" width="120"></el-table-column>
+          <el-table-column prop="LICENSEID" label="驾驶证号" width="160"></el-table-column>
+          <el-table-column prop="VEHICLENO" label="车辆号牌" width="120"></el-table-column>
+          <el-table-column prop="DEPAREA" label="上车地点" width="260"></el-table-column>
+          <el-table-column
+            prop="DEPTIME"
+            label="上车时间"
+            width="160"
+            :formatter="fomarttime"
+          ></el-table-column>
+          <el-table-column prop="DESTAREA" label="下车地点" width="160"></el-table-column>
+          <el-table-column
+            prop="DESTTIME"
+            label="下车时间"
+            width="160"
+            :formatter="fomarttime"
+          ></el-table-column>
+          <el-table-column prop="FACTPRICE" label="实收金额(元)" width="100"></el-table-column>
+          <el-table-column prop="DRIVETIME" label="载客时间（秒）" width="110"></el-table-column>
+          <el-table-column prop="DRIVEMILE" label="载客里程（千米）" min-width="140"></el-table-column>
+        </el-table>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { iconClassName } from '../../../assets/js/util'
+import { ajaxT } from 'util'
+import moment from 'moment'
+import { templateHeight } from '../../../assets/js/util'
+import AMap from 'AMap'
+
+export default {
+  name: 'CrossAreaManagementMonitor',
+  data() {
+    return {
+      map: {
+        polyline: null
+      },
+      loading: false,
+      mapQueryPanel: false,
+      tableType: false,
+      query: {
+        vehino: '',
+        stime: '',
+        etime: '',
+        company: ''
+      },
+      table: {
+        monitor: [],
+        order: []
+      },
+      data: [],
+      options: [],
+      compname: '',
+      clickFlag: false,
+      move: {},
+      companyList: []
+    }
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.map = new AMap.Map('gaodeMap', {
+        center: [106.486199, 38.326961],
+        zoom: 12
+      })
+      this.getCompSelect()
+      this.mapQueryPanel = true
+      this.query.stime = moment()
+        .subtract(1, 'days')
+        .format('YYYY-MM-DD 00:00:00')
+      this.query.etime = moment()
+        .subtract(1, 'days')
+        .format('YYYY-MM-DD 24:00:00')
+      this.query.vehino = this.$route.params.vhic
+      const elements = this.$refs['queryBar'].$el
+      templateHeight(this.$refs['queryPanel'], elements)
+      this.getOrder()
+    })
+  },
+  methods: {
+    getCompSelect() {
+      ajaxT.get('map/compSelect', { baseURL: this.baseURL }).then(res => {
+        this.companyList = res.data
+      })
+    },
+    handleMouseMove(e) {
+      if (this.clickFlag) {
+        let height = e.clientY - 50
+        if (height > 200) {
+          this.$refs.moveMap.style.height = e.clientY - 50 + 'px'
+          this.$refs.moveTable.style.height = `calc(100% - ${height}px)`
+          if (this.activeFlagA) {
+            const elements = this.$refs['queryBar'].$el
+            templateHeight(this.$refs['queryPanel'], elements)
+          }
+          if (this.activeFlagB) {
+            const elements = this.$refs['queryBar'].$el
+            templateHeight(this.$refs['queryPanelB'], elements)
+          }
+        }
+      }
+    },
+    handleMouseUp(e) {
+      this.clickFlag = false
+    },
+    handleMouseDown(e) {
+      this.clickFlag = true
+    },
+    fomarttime(row, column, date) {
+      return moment(date).format('YYYY-MM-DD HH:mm:ss')
+    },
+    fomarttime1(date) {
+      return moment(date).format('YYYY-MM-DD HH:mm:ss')
+    },
+    fomarttype(row, column, type) {
+      if (type == '1') return '载客'
+      else if (type == '2') return '接单'
+      else if (type == '3') return '空驶'
+      else if (type == '4') return '停运'
+    },
+    fomarttype1(type) {
+      if (type == '1') return '载客'
+      else if (type == '2') return '接单'
+      else if (type == '3') return '空驶'
+      else if (type == '4') return '停运'
+    },
+    fomartfx(row, column, type) {
+      if (type == 0 || type == 360) return '正北'
+      else if (type == 90) return '正东'
+      else if (type == 180) return '正南'
+      else if (type == 270) return '正西'
+      else if (type > 0 && type < 90) return '东北'
+      else if (type > 90 && type < 180) return '东南'
+      else if (type > 180 && type < 270) return '西南'
+      else if (type > 270 && type < 360) return '西北'
+    },
+    iconClassName,
+    queryVehicleSearch(query, cb) {
+      if (query.length < 3) cb([])
+      else {
+        ajaxT
+          .get('map/getVhic', {
+            baseURL: this.baseURL,
+            params: { vhic: this.query.vehino }
+          })
+          .then(res => {
+            let vhicData = []
+            for (let i = 0; i < res.data.length; i++) {
+              vhicData.push({
+                id: res.data[i].VEHICLENO,
+                lable: res.data[i].VEHICLENO,
+                value: res.data[i].VEHICLENO
+              })
+            }
+            cb(vhicData)
+          })
+      }
+    },
+    getOrder() {
+      ajaxT
+        .get('map/getOverRange', {
+          baseURL: this.baseURL,
+          params: {
+            vhic: this.query.vehino,
+            stime: this.fomarttime1(this.query.stime),
+            etime: this.fomarttime1(this.query.etime),
+            company: this.query.company
+          }
+        })
+        .then(res => {
+          this.table.order = res.data || []
+        })
+    },
+    getHistor(row) {
+      this.map.clearMap()
+      let line = []
+      line.push([row.DEPLONGITUDE, row.DEPLATITUDE])
+      line.push([row.DESTLONGITUDE, row.DESTLATITUDE])
+      this.addline(line)
+      this.addmar(row, 0)
+      this.addmar(row, 1)
+    },
+    addmar(item, i) {
+      let marker = new AMap.Marker({
+        position: i === 0 ? [item.DEPLONGITUDE, item.DEPLATITUDE] : [item.DESTLONGITUDE, item.DESTLATITUDE],
+        icon:
+          i === 0
+            ? 'https://webapi.amap.com/theme/v1.3/markers/n/start.png'
+            : 'https://webapi.amap.com/theme/v1.3/markers/n/end.png'
+        // offset: new AMap.Pixel(-15, -15),
+      })
+      marker.on('click', () => this.markerVehicle(item, i))
+      marker.setMap(this.map)
+    },
+    //地图信息弹框
+    markerVehicle(item, i) {
+      item.longi = i === 0 ? item.DEPLONGITUDE : item.DESTLONGITUDE
+      item.lati = i === 0 ? item.DEPLATITUDE : item.DESTLATITUDE
+      let txt =
+        "<table><tr><td><b style='color:#3399FF'>网约车-" +
+        item.VEHICLENO +
+        '</b></td>' +
+        '<td></td></tr><tr><td><b>[所属公司]</b>：' +
+        item.ABB_NAME +
+        '</td></tr>' +
+        '<tr><td><b>[地址]</b>：' +
+        item.DESTAREA +
+        '</td></tr>' +
+        '<tr><td><b>[订单编号]</b>：' +
+        item.ORDERID +
+        '</td></tr>' +
+        '<tr><td><b>[GPS时间]</b>：' +
+        this.fomarttime1(item.DESTTIME) +
+        '</td></tr>' +
+        ''
+      let info = []
+      info.push(txt)
+      this.map.infoWindow = new AMap.InfoWindow({
+        offset: new AMap.Pixel(4, -25),
+        content: info.join('</table>')
+      })
+      this.map.infoWindow.open(this.map, [item.longi, item.lati])
+    },
+    addline(line) {
+      if (this.map.polyline) {
+        this.map.polyline.setMap(null)
+      }
+      this.map.polyline = new AMap.Polyline({
+        path: line, // 设置线覆盖物路径
+        showDir: true,
+        dirColor: 'pink',
+        strokeColor: '#3366cc', // 线颜色
+        strokeWeight: 7 // 线宽
+      })
+      this.map.add(this.map.polyline)
+      this.map.setFitView()
+    }
+  },
+  watch: {
+    '$route.path': {
+      handler(oldVal, newVal) {
+        this.query.stime = moment()
+          .subtract(1, 'days')
+          .format('YYYY-MM-DD 00:00:00')
+        this.query.etime = moment()
+          .subtract(1, 'days')
+          .format('YYYY-MM-DD 24:00:00')
+        this.getOrder()
+      }
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+$font-color: #374873;
+$border-color: #69a7f7;
+.tw-template-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.tw-map {
+  &-query-panel {
+    top: auto;
+    bottom: 30px;
+    width: calc(100% - 250px);
+    height: 280px;
+    min-height: 230px;
+  }
+
+  &-tool {
+    &-bar {
+      top: 40px;
+      right: 50px;
+    }
+
+    &-right {
+      right: 0;
+    }
+  }
+}
+
+.tw-query-bar {
+  padding-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+// 滑动面板 从下到上
+.mapQueryPanel--bottom {
+  &-enter-active,
+  &-leave-active {
+    transition: bottom 0.5s ease;
+  }
+
+  &-enter,
+  &-leave-to {
+    bottom: -450px;
+  }
+}
+
+.map-box {
+  height: calc(100% - 250px);
+}
+
+.query-table {
+  position: relative;
+  height: 250px;
+  border-top: 1px solid #cccccc;
+  padding: 5px;
+  box-sizing: border-box;
+}
+
+$tab-width: 150px;
+$tab-height: 30px;
+.tw-tab {
+  position: absolute;
+  top: -$tab-height;
+  height: $tab-height;
+  background-color: #ffffff;
+  box-sizing: border-box;
+  border-right: 1px solid $border-color;
+  border-top: 1px solid $border-color;
+  width: $tab-width;
+  color: $border-color;
+  text-align: center;
+  line-height: 30px;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.5s ease;
+  cursor: pointer;
+  border-bottom: 1px #cccccc;
+
+  &.active {
+    background-color: $border-color;
+    color: #ffffff;
+    border-bottom: none;
+  }
+
+  &.one {
+  }
+
+  &.two {
+    left: $tab-width;
+  }
+}
+</style>

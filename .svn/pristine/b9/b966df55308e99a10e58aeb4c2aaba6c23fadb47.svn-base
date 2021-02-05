@@ -1,0 +1,228 @@
+<template>
+  <t-layout header="50" :left="left">
+    <template v-slot:header>
+      <div class="tw-layout-header">
+        <div class="tw-title">银川市网约车监管平台</div>
+        <div class="tw-toolbar">
+          <div
+            class="tw-toolbar-item"
+            :class="{ active: activeMenu(item) }"
+            v-for="item in headMenu"
+            :key="item.id"
+            @click="handleMenuItemClick(item)"
+          >
+            {{ item.title }}
+          </div>
+        </div>
+        <div class="tw-toolbar-item tw-toolbar__controller">
+          <span class=" tw-user-text">当前用户：{{ titleName }}</span>
+          <i class="el-icon-switch-button" @click="logout" style="margin-left: 10px"></i>
+        </div>
+      </div>
+    </template>
+    <template v-slot:left>
+      <div class="tw-menu">
+        <t-menu class="tw-secondary-menu-body" :data="menu.list" ref="menu" @menu-click="menuClick"></t-menu>
+      </div>
+    </template>
+    <div class="tw-layout-body">
+      <el-tabs
+        class="tw-index-tabs"
+        type="card"
+        closable
+        @tab-remove="removeTab"
+        v-model="activeName"
+        @tab-click="handleTabClick"
+      >
+        <el-tab-pane v-for="item in tabList" :key="item.href" :label="item.title" :name="item.href">
+        </el-tab-pane>
+      </el-tabs>
+      <router-view></router-view>
+    </div>
+  </t-layout>
+</template>
+
+<script>
+import TMenu from 'components/TWMenu/TWMenu.vue'
+import { getMenu, getHeadMenu } from 'assets/js/menu.js'
+import { ajaxT } from 'util'
+import _ from 'underscore'
+export default {
+  name: 'Index',
+  components: { TMenu },
+  data() {
+    return {
+      titleName: '',
+      menu: {
+        list: [],
+        active: ''
+      },
+      headMenu: [],
+      staticMenu: [],
+      activeName: '',
+      systemMenuList: [],
+      username: '',
+      tabList: [],
+      left: 260
+    }
+  },
+  created() {
+    this.$nextTick(() => {
+      const baseURL = this.baseURL
+      this.$store.dispatch('getCompanyList', baseURL)
+    })
+  },
+  mounted() {
+    this.getQx()
+  },
+  methods: {
+    // 获取权限接口
+    getQx() {
+      const parmas = new URLSearchParams()
+      if (!this.$cookies.get('username')) this.username = this.$store.state.username
+      else this.username = this.$cookies.get('username')
+      // parmas.append('username', this.username)
+      parmas.append('username', 'qx')
+      ajaxT.post('user/getUserPower', parmas).then(res => {
+        if (res.data.length === 0) {
+          this.$router.push({ path: '/login' })
+        }
+        this.titleName = res.data.length > 0 ? res.data[0].XM : ''
+        let qxStr = res.data[0].QX
+        let head = getHeadMenu()
+        let secondMenu = getMenu()
+        // 获取头部菜单(没有处理过fullpath)
+        let hMenu = _.filter(head, item => qxStr.indexOf(item.id) > -1)
+        this.staticMenu = this.filterSecondMenu(JSON.parse(JSON.stringify(secondMenu)), qxStr)
+        // 获取二级菜单
+        this.getSecondMenu(this.$route.path)
+        _.each(hMenu, item => {
+          let nowMenu = _.filter(this.staticMenu, i => i.id == item.id)[0]
+          if (item.id != 'yingyunzonglan') {
+            if (nowMenu.children[0].children) {
+              if (nowMenu.children[0].children[0].children) {
+              } else {
+                item.fullPath = nowMenu.children[0].children[0].href
+              }
+            } else {
+              item.fullPath = nowMenu.children[0].href
+            }
+          }
+        })
+        this.headMenu = hMenu
+      })
+    },
+
+    filterSecondMenu(list, qx) {
+      return _.filter(list, item => {
+        if (item.children && item.children.length > 0) {
+          let menu = this.filterSecondMenu(item.children, qx)
+          if (menu.length > 0) {
+            item.children = menu
+            return true
+          }
+          return false
+        } else {
+          return qx.indexOf(item.id) > -1
+        }
+      })
+    },
+    // 获取二级菜单
+    getSecondMenu(path) {
+      this.menu.list = []
+      if (path.indexOf('yingyunzonglan') > -1) {
+        this.left = 0
+      } else {
+        this.left = 260
+      }
+      let list = _.filter(this.staticMenu, item => {
+        return path.indexOf(item.id) > -1
+      })[0].children
+      this.menu.list = list
+      this.formatterSecondMenu(path, list)
+      this.getTab()
+    },
+    formatterSecondMenu(href, list) {
+      if (list) {
+        for (let i = 0; i < list.length; i++) {
+          if (list[i].children) {
+            this.formatterSecondMenu(href, list[i].children)
+          } else {
+            if (href == list[i].href) {
+              this.activeItem = list[i]
+              // this.$refs.menu.open = list[i]
+              this.$refs.menu.active = list[i].href
+              setTimeout(() => {
+                this.$refs.menu.init()
+              }, 100)
+            }
+          }
+        }
+      }
+      if (href == '/yingyunzonglan') {
+        this.activeItem = {
+          id: 'yingyunzonglan',
+          title: '营运总览',
+          icon: 'icon-dtjk',
+          href: '/yingyunzonglan'
+        }
+      }
+    },
+    getTab() {
+      this.activeName = this.activeItem.href
+      let list = _.filter(this.tabList, item => {
+        return item.href == this.activeItem.href
+      })
+      if (list.length == 0) {
+        this.tabList.push(this.activeItem)
+      }
+    },
+    activeMenu(item) {
+      return this.$route.path.indexOf(item.id) === 1
+    },
+    // 移除tab
+    removeTab(targetName) {
+      if (this.tabList.length > 1) {
+        this.tabList = _.filter(this.tabList, item => {
+          return item.href != targetName
+        })
+        if (this.activeName == targetName) {
+          this.$router.push({ path: this.tabList[0].href })
+          this.activeName = this.tabList[0].href
+          this.getSecondMenu(this.tabList[0].href)
+        }
+      }
+    },
+    logout() {
+      const baseURL = this.baseURL
+      ajaxT.post('user/loginOut', '', { baseURL }).then(() => {
+        this.$router.push({ path: '/login' })
+      })
+    },
+    // tab点击事件
+    handleTabClick(tab, event) {
+      if (tab.name != this.$route.path) {
+        this.$router.push({ path: tab.name })
+        this.getSecondMenu(tab.name)
+      }
+    },
+    // 左侧菜单栏点击事件
+    menuClick(val) {
+      let list = _.filter(this.tabList, item => {
+        return item.id == val.id
+      })
+      if (list.length == 0) {
+        this.tabList.push(val)
+      }
+      this.activeName = val.href
+    },
+    // 头部菜单点击事件
+    handleMenuItemClick(item) {
+      this.$router.push({ path: item.fullPath })
+      this.getSecondMenu(item.fullPath)
+    }
+  }
+}
+</script>
+
+<style></style>

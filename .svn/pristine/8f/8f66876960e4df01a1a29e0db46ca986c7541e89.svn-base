@@ -1,0 +1,10 @@
+<!-- 交通部数据/静态数据查询/车辆里程信息表  -->
+<template> </template>
+
+<script>
+export default {
+  name: 'VehicleMileageInformation'
+}
+</script>
+
+<style></style>

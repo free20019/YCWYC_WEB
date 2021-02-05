@@ -1,0 +1,114 @@
+<!-- 交通部数据/动态数据查询/订单发起表  -->
+<template>
+  <t-query-panel :model="query" size="medium">
+    <template v-slot:querybar>
+      <el-form-item>
+        <el-input v-model="query.ptname" placeholder="平台名称"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-date-picker v-model="query.stime" type="date" placeholder="开始日期">
+        </el-date-picker>
+      </el-form-item>
+      <el-form-item>
+        <el-date-picker v-model="query.etime" type="date" placeholder="结束日期">
+        </el-date-picker>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="handleQueryClick">查询</el-button>
+      </el-form-item>
+    </template>
+    <t-table-page
+      :loading="table.loading"
+      :data="table.data"
+      :page-size="table.pageSize"
+      :page-total="table.total"
+      @current-change="handlePageChange"
+    >
+      <t-table-column prop="COMPANYID" label="公司标识" width="160"></t-table-column>
+      <t-table-column
+        prop="DEPARTTIME"
+        label="预计用车时间"
+        :formatter="formatterTableTime"
+        width="200"
+      ></t-table-column>
+      <t-table-column prop="PASSENGERNOTE" label="乘客备注" width="300"></t-table-column>
+      <t-table-column prop="DEPARTURE" label="出发地点" width="400"></t-table-column>
+      <t-table-column prop="DESTINATION" label="目的地" width="450"></t-table-column>
+      <t-table-column
+        prop="ORDERTIME"
+        label="订单发起时间"
+        :formatter="formatterTableTime"
+        width="200"
+      ></t-table-column>
+    </t-table-page>
+  </t-query-panel>
+</template>
+
+<script>
+import moment from 'moment'
+import { getTableData } from 'api/MinistryOfTransportData/DynamicData/order-initiation-api'
+
+export default {
+  name: 'OrderInitiation',
+  data() {
+    return {
+      query: {
+        ptname: '',
+        stime: moment(new Date()).add(-7, 'days'),
+        etime: new Date()
+      },
+      table: {
+        loading: false,
+        data: [],
+        pageSize: 15,
+        page: 1,
+        total: 0
+      }
+    }
+  },
+  mounted() {
+    this.getTableData()
+  },
+  methods: {
+    handleQueryClick() {
+      this.getTableData()
+    },
+    formatterTableTime(a, b, val) {
+      return (val && moment(val).format('YYYY-MM-DD HH:mm:ss')) || ''
+    },
+    getTableData() {
+      const { ptname, stime, etime } = this.query
+      const { page, pageSize } = this.table
+      getTableData({
+        ptname,
+        stime,
+        etime,
+        page,
+        pageSize
+      }).then(res => {
+        this.table.data = res.datas
+        // 总数
+        this.table.total = res.count
+      })
+    },
+    handlePageChange(val) {
+      this.table.page = val.currentPage
+      this.getTableData()
+    }
+  },
+  watch: {
+    'query.stime': {
+      handler(newVal, oldVal) {
+        if (!newVal) this.query.stime = oldVal
+      }
+    },
+    'query.etime': {
+      handler(newVal, oldVal) {
+        if (!newVal) this.query.etime = oldVal
+      }
+    }
+  }
+}
+</script>
+
+<style></style>

@@ -1,0 +1,122 @@
+<!-- 交通部数据/静态数据查询/乘客基本信息表  -->
+<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
+    <t-query-panel :model="query" size="medium">
+        <template v-slot:querybar>
+            <el-form-item>
+                <el-select v-model="query.ptname" clearable placeholder="平台名称">
+                    <el-option
+                            v-for="item in getAutoCompanyName"
+                            :key="item.onlyId"
+                            :label="item.label"
+                            :value="item.value"
+                    ></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item>
+                <el-input v-model="query.phone" placeholder="手机号码" clearable></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="handleQueryClick">查询</el-button>
+            </el-form-item>
+        </template>
+        <t-table-page
+                :loading="table.loading"
+                :data="table.data"
+                :page-size="table.pageSize"
+                :page-total="table.total"
+                @current-change="handlePageChange"
+        >
+            <t-table-column type="index" label="序号" width="60"></t-table-column>
+            <t-table-column prop="COMPANYNAME" label="公司" width="240"></t-table-column>
+            <t-table-column prop="REGISTERDATE" label="乘客在平台的注册日期" width="180"></t-table-column>
+            <t-table-column prop="PASSENGERPHONE" label="乘客手机号" width="180"></t-table-column>
+            <t-table-column prop="PASSENGERNAME" label="乘客称谓" width="180"></t-table-column>
+            <t-table-column prop="PASSENGERGENDER" label="乘客性别" width="180" :formatter="formatterSex"></t-table-column>
+            <t-table-column prop="UPDATETIME" label="更新时间" :formatter="formatterTableTime" min-width="180"></t-table-column>
+        </t-table-page>
+    </t-query-panel>
+</template>
+
+<script>
+  import { ajaxT } from 'util'
+  import { mapGetters } from 'vuex'
+  import moment from 'moment'
+
+  export default {
+    name: 'PassengersBasicInformation',
+    data() {
+      return {
+        query: {
+          ptname: '0',
+          phone: ''
+        },
+        table: {
+          loading: false,
+          data: [],
+          pageSize: 15,
+          page: 1,
+          total: 0
+        }
+      }
+    },
+    mounted() {
+      this.query.stime = new Date(moment().startOf('day'))
+      this.query.etime = new Date()
+      this.getTableData()
+    },
+    computed: {
+      ...mapGetters(['getAutoCompanyName'])
+    },
+    methods: {
+      handleQueryClick() {
+        this.table.page = 1
+        this.getTableData()
+      },
+      formatterTableTime(a, b, val) {
+        return (val && moment(val).format('YYYY-MM-DD HH:mm:ss')) || ''
+      },
+      formatterSex(a, b, val) {
+        val = parseInt(val)
+        if(val===1){
+          return "男"
+        }else{
+          return "女"
+        }
+      },
+      getTableData() {
+        const { ptname, phone } = this.query
+        const { page, pageSize } = this.table
+        this.table.loading = true
+        this.getData({
+          ptname,
+          phone,
+          page,
+          pageSize
+        }).then(res => {
+          this.table.data = res.datas || []
+          // 总数
+          this.table.total = parseInt(res.count)
+          this.table.loading = false
+        })
+      },
+
+      getData(data) {
+        let params = `postData={
+        'ptname':'${data.ptname}',
+        'phone':'${data.phone}',
+        'pageIndex':'${data.page}',
+        'pageSize':'${data.pageSize}'
+        }`
+        return ajaxT.post('staticData/findPassengerBaseInfo', params).then(res => res.data)
+      },
+
+      handlePageChange(val) {
+        this.table.page = val.currentPage
+        this.getTableData()
+      }
+    },
+  }
+</script>
+
+<style></style>
+

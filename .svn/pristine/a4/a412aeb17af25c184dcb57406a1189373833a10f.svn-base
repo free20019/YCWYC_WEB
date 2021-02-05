@@ -1,0 +1,58 @@
+<!-- 交通部数据/静态数据查询/车辆保险信息表  -->
+<template>
+  <t-query-panel :model="query" size="medium">
+    <template v-slot:querybar>
+      <el-form-item>
+        <el-date-picker v-model="query.year" type="year" placeholder="选择日期">
+        </el-date-picker>
+      </el-form-item>
+      <el-form-item>
+        <el-input clearable v-model="query.cphm" placeholder="车牌号码"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary">查询</el-button>
+      </el-form-item>
+    </template>
+    <t-table-page
+      :loading="table.loading"
+      :data="table.data"
+      :page-size="table.pageSize"
+    ></t-table-page>
+  </t-query-panel>
+</template>
+
+<script>
+import { getTableData } from 'api/MinistryOfTransportData/StaticData/vehicle-insurance-api'
+export default {
+  name: 'VehicleInsuranceInformation',
+  data() {
+    return {
+      query: {
+        year: new Date(),
+        cphm: ''
+      },
+      table: {
+        loading: false,
+        data: [],
+        pageSize: 10,
+        page: 1
+      }
+    }
+  },
+  mounted() {
+    this.getInfo()
+  },
+  methods: {
+    getInfo() {
+      this.table.loading = true
+      const { year } = this.query
+      getTableData({ year }).then(res => {
+        this.table.data = res
+        this.table.loading = false
+      })
+    }
+  }
+}
+</script>
+
+<style></style>

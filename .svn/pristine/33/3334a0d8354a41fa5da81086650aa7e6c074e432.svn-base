@@ -1,0 +1,10 @@
+<!-- 交通部数据/静态数据查询/营运规模信息表  -->
+<template> </template>
+
+<script>
+export default {
+  name: 'BusinessOperationInformation'
+}
+</script>
+
+<style></style>

@@ -1,0 +1,10 @@
+<!-- 交通部数据/静态数据查询/乘客投诉信息表  -->
+<template> </template>
+
+<script>
+export default {
+  name: 'PassengerComplaintInformation'
+}
+</script>
+
+<style></style>

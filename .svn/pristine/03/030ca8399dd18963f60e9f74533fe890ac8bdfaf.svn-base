@@ -1,0 +1,210 @@
+<!-- 车辆里程管理 -->
+<template>
+  <t-query-panel :model="query" size="medium">
+    <template v-slot:querybar>
+      <el-form-item>
+        <el-input v-model="query.ptmc" placeholder="平台名称"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-input v-model="query.cphm" placeholder="车牌号码"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-input v-model="query.xslc" placeholder="行驶里程"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="queryTableInfo">查询</el-button>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="hangleImportFileClick">导入</el-button>
+        <input type="file" ref="importFile" style="display: none;" @change="hangleImportFileChange" />
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="hangleTemplateFileClick">模板下载</el-button>
+      </el-form-item>
+    </template>
+    <t-table-page :loading="table.loading" :page-size="table.pageSize" :data="table.data">
+      <t-table-column type="index" label="序号" width="60"></t-table-column>
+      <t-table-column prop="COMPANY_NAME" label="平台名称" width="340"></t-table-column>
+      <t-table-column prop="CPHM" label="车牌号码" width="340"></t-table-column>
+      <t-table-column prop="MILEAGE" label="行驶里程(千米)" width="240"></t-table-column>
+      <t-table-column
+        prop="DBTIME"
+        label="添加时间"
+        width="240"
+        :formatter="formatterTableTime"
+      ></t-table-column>
+      <el-table-column align="center" label="操作" min-width="190">
+        <template slot-scope="scope">
+          <el-button type="primary" plain @click="handleTableEdit(scope.row)">修改</el-button>
+          <el-button type="primary" plain @click="handleTableDel(scope.row)">删除</el-button>
+        </template>
+      </el-table-column>
+    </t-table-page>
+    <t-dialog
+      title="修改"
+      :visible.sync="dialog.display"
+      :close-on-click-modal="false"
+      width="500px"
+      @close="handleDialogClose"
+    >
+      <el-form label-width="90px">
+        <el-form-item label="平台名称：">
+          <el-input placeholder="平台名称" v-model="dialog.form.ptmc"></el-input>
+        </el-form-item>
+        <el-form-item label="车牌号码：">
+          <el-input placeholder="车牌号码" v-model="dialog.form.cphm"></el-input>
+        </el-form-item>
+        <el-form-item label="行驶里程：">
+          <el-input placeholder="行驶里程" v-model="dialog.form.xslc"></el-input>
+        </el-form-item>
+      </el-form>
+      <template v-slot:footer>
+        <el-button @click="handleDialogCancelClick">取 消</el-button>
+        <el-button type="primary" @click="handleDialogSubmitClick">确 定</el-button>
+      </template>
+    </t-dialog>
+  </t-query-panel>
+</template>
+
+<script>
+import { ajaxT, baseURL } from 'util'
+import moment from 'moment'
+export default {
+  name: 'VehicleMileageManagement',
+  data() {
+    return {
+      query: {
+        ptmc: '',
+        cphm: '',
+        xslc: ''
+      },
+      table: {
+        data: [],
+        pageSize: 15,
+        loading: false
+      },
+      dialog: {
+        display: false,
+        form: {
+          id: '',
+          ptmc: '',
+          cphm: '',
+          xslc: ''
+        }
+      }
+    }
+  },
+  mounted() {
+    this.queryTableInfo()
+  },
+  methods: {
+    // dialog 关闭事件
+    handleDialogClose() {
+      this.dialog.form.id = ''
+      this.dialog.form.ptmc = ''
+      this.dialog.form.cphm = ''
+      this.dialog.form.xslc = ''
+    },
+    // 弹出框 取消按钮
+    handleDialogCancelClick() {
+      this.dialog.display = false
+      this.handleDialogClose()
+    },
+    // 弹出框 提交
+    handleDialogSubmitClick() {
+      const { id, ptmc, cphm, xslc } = this.dialog.form
+      const params = new URLSearchParams()
+      params.append('id', id)
+      params.append('cphm', cphm)
+      params.append('mileage', xslc)
+      params.append('company_name', ptmc)
+      ajaxT.post('data/updateVehicleMileage', params).then(res => {
+        if (res.data.msg == 1) {
+          this.$message.success('修改成功')
+          this.handleDialogCancelClick()
+          this.queryTableInfo()
+          this
+        } else {
+          this.$message.error('修改失败')
+        }
+      })
+    },
+    // 修改
+    handleTableEdit(row) {
+      this.dialog.display = true
+      const { COMPANY_NAME, CPHM, MILEAGE, ID } = row
+      this.dialog.form.id = ID
+      this.dialog.form.ptmc = COMPANY_NAME
+      this.dialog.form.cphm = CPHM
+      this.dialog.form.xslc = MILEAGE
+    },
+    handleTableDel(row) {
+      this.$confirm('此操作将删除信息, 是否继续?', '提示', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }).then(() => {
+        const params = new URLSearchParams()
+        params.append('id', row.ID)
+        ajaxT.post('data/delVehicleMileage', params).then(res => {
+          if (res.data.msg == 1) {
+            this.$message.success('删除成功')
+          } else {
+            this.$message.error('删除失败')
+          }
+          this.queryTableInfo()
+        })
+      })
+    },
+    formatterTableTime(a, b, val) {
+      return (val && moment(val).format('YYYY-MM-DD hh:mm:ss')) || ''
+    },
+    // 查询表格数据
+    queryTableInfo() {
+      this.table.loading = true
+      const { ptmc, cphm, xslc } = this.query
+      const params = new URLSearchParams()
+      params.append('cphm', cphm)
+      params.append('mileage', xslc)
+      params.append('company_name', ptmc)
+      ajaxT.post('data/getVehicleMileage', params).then(res => {
+        this.table.data = res.data.datas
+        this.table.loading = false
+      })
+    },
+    // 导入点击事件
+    hangleImportFileClick() {
+      this.$refs.importFile.click()
+    },
+    // input 框 file change 事件
+    hangleImportFileChange(e) {
+      console.info(e.target.files[0])
+      const file = e.target.files[0]
+      if (file) {
+        const params = new FormData()
+        params.append('file', file)
+        ajaxT.post('data/uploadVehicleMileage', params).then(res => {
+          if (res.data.msg == '导入失败') {
+            this.$notify.error({
+              title: '失败',
+              message: `导入失败：导入成功${res.data.success.length}条，失败${res.data.error.length}条，重复${res.data.repeat.length}条`
+            })
+          } else if (res.data.msg == '导入成功') {
+            this.$notify({
+              title: '成功',
+              message: `导入成功：导入成功${res.data.success.length}条，失败${res.data.error.length}条，重复${res.data.repeat.length}条`,
+              type: 'success'
+            })
+          }
+        })
+      }
+    },
+    // 模板下载
+    hangleTemplateFileClick() {
+      window.open(`${baseURL}app/file/VehicleMileageTemplate.xlsx`)
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped></style>

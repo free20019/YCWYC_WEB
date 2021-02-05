@@ -1,0 +1,24 @@
+@import "./mixins.scss";
+@import "./menu.scss";
+@import "./reset.scss";
+
+html,
+body {
+  height: 100%;
+}
+
+#app {
+  height: 100%;
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.el-tabs__header {
+  margin: 0 !important;
+}
+.tw-layout-body {
+  height: 100%;
+}
+.t-query-panel {
+  height: calc(100% - 41px) !important;
+}

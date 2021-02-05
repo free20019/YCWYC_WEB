@@ -1,0 +1,10 @@
+<!-- 动态监控 -->
+<template> </template>
+
+<script>
+export default {
+  name: 'DynamicMonitoring'
+}
+</script>
+
+<style></style>

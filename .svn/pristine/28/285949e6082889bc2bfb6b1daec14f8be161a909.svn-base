@@ -1,0 +1,169 @@
+<!-- 交通部数据/静态数据查询/车辆保险信息表  -->
+<template>
+  <t-query-panel :model="query" size="medium">
+    <template v-slot:querybar>
+      <el-form-item>
+        <el-date-picker v-model="query.dateyear" type="year" placeholder="选择年"> </el-date-picker>
+      </el-form-item>
+      <el-form-item>
+        <el-select v-model="query.ptname" clearable placeholder="平台名称">
+          <el-option
+            v-for="item in getAutoCompanyName"
+            :key="item.onlyId"
+            :label="item.label"
+            :value="item.value"
+          ></el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-autocomplete
+          class="inline-input"
+          v-model="query.vehino"
+          :fetch-suggestions="handleQuerySearch"
+          placeholder="车牌号码"
+          :trigger-on-focus="false"
+          @focus="handleCarfocus"
+          clearable
+        ></el-autocomplete>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary" @click="handleQueryClick">查询</el-button>
+      </el-form-item>
+    </template>
+    <template>
+      <el-table
+        class="tw-table"
+        :data="table.data"
+        v-loading="table.loading"
+        border
+        height="calc(100% - 42px)"
+        stripe
+      >
+        <el-table-column align="center" width="60" type="index" label="序号"></el-table-column>
+        <el-table-column align="center" prop="COMPANYNAME" label="平台名称"></el-table-column>
+        <el-table-column align="center" prop="VEHICLENO" width="100" label="车牌号码"></el-table-column>
+        <el-table-column align="center" prop="INSURCOM" min-width="130" label="保险公司"></el-table-column>
+        <el-table-column align="center" prop="INSURNUM" label="保险号"></el-table-column>
+        <el-table-column align="center" prop="INSURTYPE" label="保险类型"></el-table-column>
+        <el-table-column align="center" prop="INSURCOUNT" label="保险金额"></el-table-column>
+        <el-table-column
+          align="center"
+          prop="INSUREFF"
+          label="保险生效时间"
+          :formatter="dateFormatter"
+        ></el-table-column>
+        <el-table-column
+          align="center"
+          prop="UPDATETIME"
+          label="更新时间"
+          :formatter="timeFormatter"
+          :resizable="false"
+        ></el-table-column>
+      </el-table>
+      <el-pagination
+        class="tw__page query"
+        background
+        :page-size="table.pageSize"
+        :current-page="table.currentPage"
+        :total="table.total"
+        @current-change="handleTablePageCurrentChange"
+      ></el-pagination>
+    </template>
+  </t-query-panel>
+</template>
+
+<script>
+import { ajaxT } from 'util'
+import moment from 'moment'
+import { mapGetters } from 'vuex'
+import { templateHeight } from '../../../assets/js/util'
+
+export default {
+  name: 'VehicleInsuranceInformation',
+  data() {
+    return {
+      query: {
+        ptname: '0',
+        vehino: '',
+        dateyear: ''
+      },
+      table: {
+        data: [],
+        loading: false,
+        pageSize: 20,
+        currentPage: 1,
+        total: 0
+      }
+    }
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.query.dateyear = moment(new Date()).format('YYYY')
+      this.getDataList()
+    })
+  },
+  computed: {
+    ...mapGetters(['getAutoCompanyName'])
+  },
+  methods: {
+    handleQueryClick() {
+      this.table.currentPage = 1
+      this.getDataList()
+    },
+    //车牌号码输入框输入后匹配信息
+    handleQuerySearch: function(query, cb) {
+      if (query.length >= 5) {
+        let idata = `postData={'vehino':'${query}','year':'${this.query.dateyear}'}`
+        ajaxT
+          .post('manage/findBxVehicleNo', idata, {
+            baseURL: this.baseURL
+          })
+          .then(({ data }) => {
+            for (let i = 0; i < data.vehicleNo.length; i++) {
+              data.vehicleNo[i].value = data.vehicleNo[i].VEHICLENO
+            }
+            cb(data.vehicleNo)
+          })
+      } else {
+        return
+      }
+    },
+    //查询保险信息
+    getDataList() {
+      this.table.loading = true
+      let year = moment(this.query.dateyear).format('YYYY')
+      let idata = `postData={'ptname':'${this.query.ptname}','year':'${year}','vehino':'${this.query.vehino}','pageIndex':'${this.table.currentPage}','pageSize':'${this.table.pageSize}' }`
+      ajaxT
+        .post('manage/findClbxxx', idata, {
+          baseURL: this.baseURL
+        })
+        .then(res => {
+          let data = res.data
+          this.table.data = data.datas
+          this.table.total = parseInt(data.count)
+          setTimeout(() => {
+            this.table.loading = false
+          }, 600)
+        })
+    },
+    //车牌号码输入框聚焦事件
+    handleCarfocus() {
+      const { vehino } = this.query
+      if (vehino === '') this.query.vehino = '浙A'
+    },
+    //分页
+    handleTablePageCurrentChange(index) {
+      this.table.currentPage = index
+      this.getDataList()
+    },
+    timeFormatter(item, col, value) {
+      return moment(value).format('YYYY-MM-DD HH:mm:ss')
+    },
+    dateFormatter(item, col, value) {
+      return moment(value).format('YYYY-MM-DD')
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped></style>

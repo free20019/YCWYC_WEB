@@ -1,0 +1,61 @@
+<!-- 综合订单查询 -->
+<template>
+  <t-query-panel :model="query" size="medium">
+    <template v-slot:querybar>
+      <el-form-item>
+        <el-button type="primary">查询</el-button>
+      </el-form-item>
+    </template>
+    <template>
+      <el-table border :loading="table.loading" height="calc(100% - 300px - 42px)">
+        <el-table-column align="center" type="index" label="序号" width="60"></el-table-column>
+        <el-table-column align="center" label="平台名称" width="130"></el-table-column>
+      </el-table>
+      <el-pagination class="tw__page" background layout="prev, pager, next, total" :total="1000"> </el-pagination>
+      <div style="height:300px">
+        <el-tabs v-model="tab.name">
+          <el-tab-pane label="经营出发" name="jycf"></el-tab-pane>
+          <el-tab-pane label="经营到达" name="jydd"></el-tab-pane>
+          <el-tab-pane label="支付信息" name="zfxx"></el-tab-pane>
+          <el-tab-pane label="投诉信息" name="tsxx"></el-tab-pane>
+        </el-tabs>
+        <el-table border height="calc(100% - 40px)" v-if="tab.name == 'jycf'">
+          <el-table-column align="center" label="平台名称" width="150"></el-table-column>
+          <el-table-column align="center" label="订单号" width="150"></el-table-column>
+        </el-table>
+        <el-table border height="calc(100% - 40px)" v-else-if="tab.name == 'jydd'">
+          <el-table-column align="center" label="平台名称" width="150"></el-table-column>
+          <el-table-column align="center" label="订单号" width="150"></el-table-column>
+          <el-table-column align="center" label="下车时间" width="150"></el-table-column>
+        </el-table>
+      </div>
+    </template>
+  </t-query-panel>
+</template>
+
+<script>
+export default {
+  name: 'ComprehensiveOrderQuery',
+  data() {
+    return {
+      query: {},
+      table: {
+        loading: false,
+        data: [],
+        pageSize: 15,
+        page: 1,
+        total: 0
+      },
+      tab: {
+        name: ''
+      }
+    }
+  },
+  mounted() {},
+  methods: {
+    handlePageChange() {}
+  }
+}
+</script>
+
+<style></style>

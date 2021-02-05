@@ -1,0 +1,594 @@
+<!--区域监测-->
+<template>
+  <div class="tw-template-wrapper">
+    <div class="tw-map-list" v-show="mapQueryPanel">
+      <el-tabs
+        class="tw-template-height"
+        type="card"
+        v-model="activeName"
+        :stretch="true"
+        @tab-click="tabClick"
+      >
+        <el-tab-pane label="区域监测" name="first"> </el-tab-pane>
+        <el-tab-pane label="电子围栏" name="second"> </el-tab-pane>
+      </el-tabs>
+      <div class="tw-tabs-content">
+        <template v-if="activeName == 'first'">
+          <el-table
+            height="100%"
+            :data="areaList"
+            :row-class-name="tableRowClassName"
+            @row-click="getVehicleList"
+          >
+            <el-table-column
+              :show-overflow-tooltip="true"
+              prop="AREA_NAME"
+              width="100"
+              label="区域"
+            ></el-table-column>
+            <el-table-column align="center" prop="AREA_NUM" label="车辆数"></el-table-column>
+            <el-table-column align="center" prop="AREA_AVG_NUM" label="预报警数"></el-table-column>
+          </el-table>
+        </template>
+        <template v-else-if="activeName == 'second'">
+          <div class="tab-info">
+            <ul>
+              <li
+                class="tw-list-item"
+                style="line-height:49px;padding-left: 60px;color: #374873;font-weight: 600 "
+                :class="{ 'tw-text-error': item.type }"
+                v-for="item in fanceList"
+                :key="item.id"
+                @click="handleAreaFanceChange(item)"
+              >
+                <i class="tw-icon--prefix el-icon-location-outline"></i>
+                {{ item.AREA_NAME }}
+              </li>
+            </ul>
+          </div>
+        </template>
+      </div>
+    </div>
+    <div class="tw-map-content">
+      <div id="gaodeMap"></div>
+      <div class="tw-map-table">
+        <div class="tw-title">{{ areaname }}</div>
+        <el-table
+          :data="vehicleList"
+          border
+          v-show="tabIndex == 0"
+          height="calc(100% - 42px)"
+          size="mini"
+          v-loading="areaLonding"
+        >
+          <el-table-column label="平台名称" prop="vehName"></el-table-column>
+          <el-table-column label="车牌号码" prop="vehino"></el-table-column>
+          <el-table-column label="营运状态" prop="bizStatus" :formatter="fomartyytype"></el-table-column>
+          <el-table-column label="速度(KM/H)" prop="speed"></el-table-column>
+          <el-table-column label="定位时间" prop="dateTime"></el-table-column>
+        </el-table>
+        <el-table
+          :data="filterDataList"
+          border
+          v-show="tabIndex == 1"
+          height="calc(100% - 42px)"
+          size="mini"
+          v-loading="fanceLonding"
+        >
+          <el-table-column prop="ABB_NAME" label="平台名称" width="160"></el-table-column>
+          <el-table-column prop="VEHICLENO" label="车牌号码" width="160"></el-table-column>
+          <el-table-column prop="IN_OUT" label="类型" :formatter="fomarttype" width="160"></el-table-column>
+          <!--<el-table-column  prop="POSITIONTIME" label="定位时间" min-width="160"></el-table-column>-->
+          <el-table-column prop="POSITIONTIME" label="定位时间" min-width="160" show-overflow-tooltip>
+            <template slot-scope="scope">
+              <span v-text="fomarttime(scope.row.POSITIONTIME)"></span>
+            </template>
+          </el-table-column>
+        </el-table>
+        <el-pagination
+          background
+          layout="prev, pager, next, total"
+          :total="total"
+          :page-count="totalPages"
+          :current-page="currentPage"
+          @current-change="handlePageSizeChange"
+          class="tw__page "
+        ></el-pagination>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import { ajaxT } from 'util'
+import AMap from 'AMap'
+import _ from 'underscore'
+import moment from 'moment'
+import { iconClassName } from '../../assets/js/util'
+
+export default {
+  name: 'AreaMonitoring',
+  data() {
+    return {
+      map: {
+        polygon: null
+      },
+      loading: false,
+      mapQueryPanel: false,
+      fanceQueryPanel: false,
+      activeAreaNames: 0,
+      areaList: [],
+      vehicleList: [],
+      activeName: 'first',
+      fanceList: [],
+      fanceData: [],
+      table: {
+        data: []
+      },
+      tabIndex: 0,
+      currentPage: 1,
+      tableRows: 10,
+      total: 0,
+      totalPages: 1,
+      fanceLonding: false,
+      areaLonding: false,
+      areaname: '区域名称',
+      tabactiveName: 'first'
+    }
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.map = new AMap.Map('gaodeMap', {
+        center: [120.197521, 30.24298],
+        zoom: 12
+      })
+      this.getAreaList()
+      this.mapQueryPanel = true
+    })
+  },
+  computed: {
+    tableColumn() {
+      return [
+        { prop: 'ABB_NAME', label: '平台名称', width: 80 },
+        { prop: 'VEHICLENO', label: '车牌号码', width: 90 },
+        {
+          prop: 'IN_OUT',
+          label: '类型',
+          width: 50,
+          'show-overflow-tooltip': true,
+          formatter: this.fomarttype
+        },
+        {
+          prop: 'POSITIONTIME',
+          label: '定位时间',
+          'min-width': 160,
+          'show-overflow-tooltip': true,
+          resizable: false,
+          formatter: this.fomarttime
+        }
+      ]
+    },
+    filterDataList() {
+      return _.filter(this.fanceData, (item, index) => {
+        return (this.currentPage - 1) * this.tableRows <= index && this.currentPage * this.tableRows > index
+      })
+    }
+  },
+  methods: {
+    iconClassName,
+    tableRowClassName({ row, rowIndex }) {
+      if (row.AREA_NUM > row.AREA_AVG_NUM) {
+        return 'danger-row'
+      } else return ''
+    },
+    handleClick(tab, event) {
+      console.log(tab, event)
+    },
+    tabClick(t) {
+      this.tabIndex = t.index
+    },
+    getAreaList() {
+      ajaxT
+        .get('map/getArea', {
+          baseURL: this.baseURL
+        })
+        .then(res => {
+          let area = res.data,
+            fance = res.data
+          this.fanceList = fance
+          this.areaList = area
+        })
+    },
+    fomarttype(row, column, type) {
+      if (type == '0') return '进'
+      else if (type == '1') return '出'
+    },
+    fomarttime(date) {
+      return moment(date).format('YYYY-MM-DD HH:mm:ss')
+    },
+    getVehicleList(item) {
+      let areaId = item.AREA_ID
+      let index = null
+      _.each(this.areaList, (item, _index) => {
+        if (item.AREA_ID === areaId) {
+          this.map.clearMap()
+          index = _index
+          this.areaname = item.AREA_NAME
+          let polygonArr = [] //多边形覆盖物节点坐标数组
+          let zbs = item.AREA_ZB.split(';')
+          for (let i = 0; i < zbs.length; i++) {
+            let zb = zbs[i].split(',')
+            // if(item.INSERT_TYPE === '1')
+            //   polygonArr.push([parseFloat(zb[0]) - 0.0049, parseFloat(zb[1]) + 0.0025])
+            // else
+            polygonArr.push([parseFloat(zb[0]), parseFloat(zb[1])])
+          }
+          this.map.polygon = new AMap.Polygon({
+            path: polygonArr,
+            strokeColor: '#FF33FF',
+            strokeWeight: 6,
+            strokeOpacity: 0.2,
+            fillOpacity: 0.4,
+            fillColor: '#1791fc',
+            zIndex: 50
+          })
+
+          this.map.add(this.map.polygon)
+          // 缩放地图到合适的视野级别
+          this.map.setFitView([this.map.polygon])
+        }
+      })
+      this.areaLonding = true
+      ajaxT
+        .get('map/getGet', {
+          baseURL: this.baseURL,
+          params: { comp_id: 'all', type: '1', areaid: areaId }
+        })
+        .then(res => {
+          this.vehicleList = res.data
+          _.map(this.vehicleList, item => {
+            if (item.mdt_no === 'didi') {
+              item.icon = 'icon-ddzc'
+            } else if (item.mdt_no === 'shouyue') {
+              item.icon = 'icon-sqzc'
+            } else if (item.mdt_no === 'caocao') {
+              item.icon = 'icon-cczc'
+            } else if (item.mdt_no === 'wanshun') {
+              item.icon = 'icon-wszc'
+            } else if (item.mdt_no === 'shenzhou') {
+              item.icon = 'icon-szzc'
+            }
+          })
+          this.areaLonding = false
+          _.each(res.data, item => {
+            this.addmar(item)
+          })
+        })
+    },
+    addmar(item) {
+      let marker = new AMap.Marker({
+        position: [item.longi, item.lati],
+        icon: this.findPicByMdtNo(item)
+        // offset: new AMap.Pixel(-15, -15),
+      })
+      marker.on('click', () => this.markerVehicle(item))
+      marker.setMap(this.map)
+    },
+    //地图信息弹框
+    markerVehicle(item) {
+      let txt =
+        "<table><tr><td><b style='color:#3399FF'>网约车-" +
+        item.vehino +
+        '(' +
+        (item.legal === '0' ? '不合规' : '合规') +
+        ')</b></td>' +
+        '<td></td></tr><tr><td><b>[所属公司]</b>：' +
+        item.vehName +
+        '</td></tr>' +
+        '<tr><td><b>[速度]</b>：' +
+        item.speed +
+        'KM/H' +
+        '</td></tr>' +
+        '<tr><td><b>[营运状态]</b>：' +
+        this.formatterType(item.bizStatus) +
+        '</td></tr>' +
+        '<tr><td><b>[GPS时间]</b>：' +
+        this.formatterTableTime(item.dateTime) +
+        '</td></tr>' +
+        ''
+      let info = []
+      info.push(txt)
+      this.map.setCenter([item.longi, item.lati])
+      this.map.infoWindow = new AMap.InfoWindow({
+        offset: new AMap.Pixel(4, -25),
+        content: info.join('</table>')
+      })
+      this.map.infoWindow.open(this.map, [item.longi, item.lati])
+    },
+    formatterTableTime(val) {
+      return (val && moment(val).format('YYYY-MM-DD HH:mm:ss')) || ''
+    },
+    formatterType(type) {
+      type = parseInt(type)
+      if (type === 1) return '载客'
+      else if (type === 2) return '接单'
+      else if (type === 3) return '空驶'
+      else if (type === 4) return '停运'
+    },
+    //地图打点图形
+    findPicByMdtNo(item) {
+      let address = ''
+      if (item.mdt_no === 'didi') {
+        if (item.legal === '0') address = 'image/marker/ddh.png'
+        else address = 'image/marker/dd.png'
+      } else if (item.mdt_no === 'shenzhou') {
+        if (item.legal === '0') address = 'image/marker/szh.png'
+        else address = 'image/marker/sz.png'
+      } else if (item.mdt_no === 'caocao') {
+        if (item.legal === '0') address = 'image/marker/cch.png'
+        else address = 'image/marker/cc.png'
+      } else if (item.mdt_no === 'yidao') {
+        if (item.legal === '0') address = 'image/marker/ydh.png'
+        else address = 'image/marker/yd.png'
+      } else if (item.mdt_no === 'aa') {
+        if (item.legal === '0') address = 'image/marker/aah.png'
+        else address = 'image/marker/aa.png'
+      } else if (item.mdt_no === 'yangguangchedao') {
+        if (item.legal === '0') address = 'image/marker/ygh.png'
+        else address = 'image/marker/yg.png'
+      } else if (item.mdt_no === 'wanshun') {
+        if (item.legal === '0') address = 'image/marker/wsh.png'
+        else address = 'image/marker/ws.png'
+      } else if (item.mdt_no === 'shouyue') {
+        if (item.legal === '0') address = 'image/marker/syh.png'
+        else address = 'image/marker/sy.png'
+      } else if (item.mdt_no === 'TJHT') {
+        if (item.legal === '0') address = 'image/marker/xcych.png'
+        else address = 'image/marker/xcyc.png'
+      } else if (item.mdt_no === 'hhyc') {
+        if (item.legal === '0') address = 'image/marker/hhdch.png'
+        else address = 'image/marker/hhdc.png'
+      } else if (item.mdt_no === 'tongcheng') {
+        if (item.legal === '0') address = 'image/marker/mzdch.png'
+        else address = 'image/marker/mzdc.png'
+      } else if (item.mdt_no === 'dccx') {
+        if (item.legal === '0') address = 'image/marker/dccxh.png'
+        else address = 'image/marker/dccx.png'
+      } else if (item.mdt_no === 'xiehua') {
+        if (item.legal === '0') address = 'image/marker/xhcxh.png'
+        else address = 'image/marker/xhcx.png'
+      } else if (item.mdt_no === 'xiangdao') {
+        if (item.legal === '0') address = 'image/marker/xdcxh.png'
+        else address = 'image/marker/xdcx.png'
+      } else if (item.mdt_no === 'weixing') {
+        if (item.legal === '0') address = 'image/marker/ycxh.png'
+        else address = 'image/marker/ycx.png'
+      } else if (item.mdt_no === 'tmcx') {
+        if (item.legal === '0') address = 'image/marker/tmcxh.png'
+        else address = 'image/marker/tmcx.png'
+      } else if (item.mdt_no === 'gscx') {
+        if (item.legal === '0') address = 'image/marker/gscxh.png'
+        else address = 'image/marker/gscx.png'
+      } else if (item.mdt_no === 'jbyy') {
+        if (item.legal === '0') address = 'image/marker/jbyyh.png'
+        else address = 'image/marker/jbyy.png'
+      } else if (item.mdt_no === 'lvcheng') {
+        if (item.legal === '0') address = 'image/marker/lcych.png'
+        else address = 'image/marker/lcyc.png'
+      } else if (item.mdt_no === 'T3') {
+        if (item.legal === '0') address = 'image/marker/t3cxh.png'
+        else address = 'image/marker/t3cx.png'
+      } else if (item.mdt_no === 'tfcx') {
+        if (item.legal === '0') address = 'image/marker/tfcxh.png'
+        else address = 'image/marker/tfcx.png'
+      } else if (item.mdt_no === 'tuotuo') {
+        if (item.legal === '0') address = 'image/marker/ttexh.png'
+        else address = 'image/marker/ttex.png'
+      } else if (item.mdt_no === 'yicheng') {
+        if (item.legal === '0') address = 'image/marker/yccxh.png'
+        else address = 'image/marker/yccx.png'
+      }
+      return address
+    },
+    handleAreaFanceChange(item) {
+      console.info(1111111111, item)
+      this.areaname = item.AREA_NAME
+      this.map.clearMap()
+      let polygonArr = new Array() //多边形覆盖物节点坐标数组
+      let zbs = item.AREA_ZB.split(';')
+      for (let i = 0; i < zbs.length; i++) {
+        let zb = zbs[i].split(',')
+        // if(item.INSERT_TYPE == '1')
+        //   polygonArr.push([parseFloat(zb[0]) - 0.0049, parseFloat(zb[1]) + 0.0025])
+        // else
+        polygonArr.push([parseFloat(zb[0]), parseFloat(zb[1])])
+      }
+      this.map.polygon = new AMap.Polygon({
+        path: polygonArr,
+        strokeColor: '#FF33FF',
+        strokeWeight: 6,
+        strokeOpacity: 0.2,
+        fillOpacity: 0.4,
+        fillColor: '#1791fc',
+        zIndex: 50
+      }).on('click', e => {
+        //构建信息窗体中显示的内容
+        let info = []
+        info.push('区域名:' + item.AREA_NAME)
+        info.push('区域描述:' + item.AREA_MS)
+        let infoWindow = new AMap.InfoWindow({
+          content: info.join('<br/>') //使用默认信息窗体框样式，显示信息内容
+        })
+        infoWindow.open(this.map, [e.lnglat.getLng(), e.lnglat.getLat()])
+      })
+      this.map.add(this.map.polygon)
+      // 缩放地图到合适的视野级别
+      this.map.setFitView([this.map.polygon])
+
+      ajaxT
+        .get('map/getFance', {
+          baseURL: this.baseURL,
+          params: { areaid: item.AREA_ID }
+        })
+        .then(res => {
+          this.fanceLonding = false
+          this.fanceData = res.data
+          this.total = res.data.length
+        })
+    },
+    /* 当页数改变时触发 */
+    handlePageSizeChange(page) {
+      this.currentPage = page
+    },
+    fomartyytype(row, column, type) {
+      if (type == '1') return '载客'
+      else if (type == '2') return '接单'
+      else if (type == '3') return '空驶'
+      else if (type == '4') return '停运'
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+$font-color: #374873;
+$border-color: #69a7f7;
+
+.tw-map {
+  &-tool {
+    &-right {
+      top: 40px;
+      right: 0;
+    }
+  }
+}
+.tab-info {
+  height: 100%;
+  padding: 0 5px;
+  overflow: auto;
+}
+.tw-icon-platform {
+  margin-left: 5px;
+  margin-right: 5px;
+}
+.tw-map-left-panel {
+  position: absolute;
+  box-sizing: border-box;
+  height: 100%;
+  width: 300px;
+  padding: 10px 10px 5px 5px;
+}
+.map-box {
+  margin-left: 300px;
+  height: calc(100% - 250px);
+  border: 1px solid $border-color;
+}
+.table-box {
+  position: relative;
+  margin-left: 300px;
+  height: 250px;
+  border-left: 1px solid #cccccc;
+  box-sizing: border-box;
+}
+.table-title {
+  position: absolute;
+  height: 30px;
+  width: 200px;
+  top: -30px;
+  left: 0;
+  background-color: $border-color;
+  color: #ffffff;
+  text-align: center;
+  line-height: 30px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.tab-title {
+  display: inline-block;
+  width: 90px;
+}
+.tab-content {
+  display: inline-block;
+  text-align: center;
+  &.car {
+    width: 50px;
+  }
+  &.waring {
+    width: 55px;
+  }
+}
+.tw-tabs-content {
+  height: calc(100% - 41px);
+  box-sizing: border-box;
+  overflow: auto;
+  overflow-x: hidden;
+}
+.tw-map-table {
+  height: 250px;
+  position: relative;
+  border-top: 1px solid #a8cbfb;
+  box-sizing: border-box;
+  .tw-title {
+    position: absolute;
+    height: 30px;
+    width: 200px;
+    top: -30px;
+    left: 0;
+    background-color: #69a7f7;
+    color: #ffffff;
+    text-align: center;
+    line-height: 30px;
+    font-size: 16px;
+    font-weight: 600;
+    user-select: none;
+  }
+}
+.tw-template-wrapper {
+  display: flex;
+}
+.tw-map-list {
+  box-sizing: border-box;
+  width: 300px;
+  padding: 5px;
+  height: 100%;
+  border-right: 1px solid #a8cbfb;
+}
+.tw-tabs-content {
+  height: calc(100% - 41px);
+}
+.tw-search_tabs {
+  padding: 10px;
+}
+.tw-list {
+  height: calc(100% - 86px);
+}
+.tw-map-content {
+  position: relative;
+  height: 100%;
+  width: calc(100% - 300px);
+  #gaodeMap {
+    height: calc(100% - 250px);
+    width: 100%;
+  }
+}
+.tw-map-table {
+  height: 250px;
+  position: relative;
+  border-top: 1px solid #a8cbfb;
+  box-sizing: border-box;
+  .tw-title {
+    position: absolute;
+    height: 30px;
+    width: 200px;
+    top: -30px;
+    left: 0;
+    background-color: #69a7f7;
+    color: #ffffff;
+    text-align: center;
+    line-height: 30px;
+    font-size: 16px;
+    font-weight: 600;
+    user-select: none;
+  }
+}
+</style>

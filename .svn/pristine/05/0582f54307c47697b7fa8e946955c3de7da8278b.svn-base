@@ -1,0 +1,10 @@
+<!-- 交通部数据/静态数据查询/车辆保险信息表  -->
+<template> </template>
+
+<script>
+export default {
+  name: 'VehicleInsuranceInformation'
+}
+</script>
+
+<style></style>

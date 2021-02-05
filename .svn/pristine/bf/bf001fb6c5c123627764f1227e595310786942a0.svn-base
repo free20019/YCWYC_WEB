@@ -1,0 +1,43 @@
+@import "./mixins.scss";
+@import "./menu.scss";
+@import "./reset.scss";
+
+html,
+body {
+  height: 100%;
+}
+
+#app {
+  height: 100%;
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.el-tabs__header {
+  margin: 0 !important;
+}
+.tw-layout-body {
+  height: 100%;
+}
+.t-query-panel {
+  height: calc(100% - 41px) !important;
+}
+.tw-template-wrapper {
+  height: calc(100% - 41px);
+}
+.tw-map-tool {
+  .tw-tool_tabs {
+    .el-tabs__nav-prev,
+    .el-tabs__nav-next {
+      background-color: #ffffff;
+      line-height: 52px;
+    }
+    .el-tabs__item {
+      height: 100%;
+      background-color: #ffffff;
+      text-align: center;
+      position: relative;
+      padding: 0px !important;
+    }
+  }
+}

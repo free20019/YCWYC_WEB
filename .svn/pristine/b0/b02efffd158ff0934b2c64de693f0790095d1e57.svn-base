@@ -1,0 +1,96 @@
+<!-- 区域监控 -->
+<template>
+  <div class="tw-template-wrapper">
+    <div class="tw-map-list">
+      <el-tabs v-model="tabs.active" type="card" :stretch="true">
+        <el-tab-pane label="区域检测" name="qyjc"> </el-tab-pane>
+        <el-tab-pane label="电子围栏" name="dzwl"> </el-tab-pane>
+      </el-tabs>
+      <div class="tw-tabs-content">
+        <el-table :data="table.data" height="100%"> </el-table>
+      </div>
+    </div>
+    <div class="tw-map-content">
+      <div id="map"></div>
+      <div class="tw-map-table">
+        <div class="tw-title">区域名称</div>
+        <el-table :data="table.data" height="100%"> </el-table>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'AreaMonitoring',
+  data() {
+    return {
+      tabs: {
+        active: ''
+      },
+      table: {
+        data: []
+      }
+    }
+  },
+  mounted() {
+    this.initMap()
+  },
+  methods: {
+    initMap() {
+      this.map = new AMap.Map('map', {})
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.tw-template-wrapper {
+  display: flex;
+}
+.tw-map-list {
+  box-sizing: border-box;
+  width: 300px;
+  padding: 5px;
+  height: 100%;
+  border-right: 1px solid #a8cbfb;
+}
+.tw-tabs-content {
+  height: calc(100% - 41px);
+}
+.tw-search_tabs {
+  padding: 10px;
+}
+.tw-list {
+  height: calc(100% - 86px);
+}
+.tw-map-content {
+  position: relative;
+  height: 100%;
+  width: calc(100% - 300px);
+  #map {
+    height: calc(100% - 250px);
+    width: 100%;
+  }
+}
+.tw-map-table {
+  height: 250px;
+  position: relative;
+  border-top: 1px solid #a8cbfb;
+  box-sizing: border-box;
+  .tw-title {
+    position: absolute;
+    height: 30px;
+    width: 200px;
+    top: -30px;
+    left: 0;
+    background-color: #69a7f7;
+    color: #ffffff;
+    text-align: center;
+    line-height: 30px;
+    font-size: 16px;
+    font-weight: 600;
+    user-select: none;
+  }
+}
+</style>

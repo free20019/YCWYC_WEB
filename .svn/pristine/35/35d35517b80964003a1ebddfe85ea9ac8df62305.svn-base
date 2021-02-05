@@ -1,0 +1,656 @@
+<!--历史轨迹回放-->
+<template>
+  <div
+          class="tw-template-wrapper"
+          @mousemove="handleMouseMove"
+          @mouseup="handleMouseUp"
+          ref="wrapper"
+  >
+    <div class="map-box" ref="moveMap">
+      <div id="gaodeMap" style="height:100%"></div>
+    </div>
+    <div class="query-table" ref="moveTable">
+      <div class="move-line" @mousedown="handleMouseDown"></div>
+      <div class="tw-tab one" :class="{active:activeFlagA}" @click="changeA">定位</div>
+      <div class="tw-tab two" :class="{active:activeFlagB}" @click="changeB">订单</div>
+      <el-form :inline="true" size="mini" ref="queryBar">
+        <el-form-item>
+          <el-autocomplete
+                  v-model="query.vehino"
+                  :fetch-suggestions="queryVehicleSearch"
+                  placeholder="车牌号码"
+                  :trigger-on-focus="false"
+                  clearable
+          ></el-autocomplete>
+        </el-form-item>
+        <el-form-item>
+          <el-date-picker type="datetime" v-model="query.stime" placeholder="开始时间"></el-date-picker>
+        </el-form-item>
+        <el-form-item>
+          <el-date-picker type="datetime" v-model="query.etime" placeholder="结束时间"></el-date-picker>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleQueryClick">查询</el-button>
+        </el-form-item>
+        <el-form-item>
+          <el-button class="glyphicon-play" type="primary" v-show="buttonShow">播放</el-button>
+        </el-form-item>
+        <el-form-item>
+          <el-button class="glyphicon-pause" type="primary" v-show="stopShow">暂停</el-button>
+        </el-form-item>
+        <el-form-item>
+          <el-button class="glyphicon-repeat" type="primary" v-show="startShow">继续</el-button>
+        </el-form-item>
+        <el-form-item>
+          <el-button class="glyphicon-stop" type="primary" v-show="buttonShow">停止</el-button>
+        </el-form-item>
+      </el-form>
+      <div ref="queryPanel" v-show="activeFlagA" v-loading="loading">
+        <el-table :data="table.monitor" border size="mini" height="100%">
+          <el-table-column prop="ABB_NAME" label="平台名称" width="120"></el-table-column>
+          <el-table-column prop="VEHICLENO" label="车牌号码" width="100"></el-table-column>
+          <el-table-column prop="LONGITUDE" label="经度" width="120"></el-table-column>
+          <el-table-column prop="LATITUDE" label="纬度" width="120"></el-table-column>
+          <el-table-column prop="SPEED" label="速度(KM/H)" width="100"></el-table-column>
+          <el-table-column prop="DIRECTION" label="方向" width="100" :formatter="fomartfx"></el-table-column>
+          <el-table-column prop="ELEVATION" label="海拔高度(M)" width="100"></el-table-column>
+          <el-table-column prop="BIZSTATUS" label="状态" width="100" :formatter="fomarttype"></el-table-column>
+          <el-table-column prop="POSITIONTIME" label="定位时间" width="160"
+                           :formatter="fomarttime"></el-table-column>
+          <el-table-column prop="ORDERID" label="订单编号" min-width="120"></el-table-column>
+        </el-table>
+      </div>
+      <div ref="queryPanelB" v-show="activeFlagB" v-loading="loading">
+        <el-table :data="table.order" border size="mini" height="100%">
+          <el-table-column prop="ABB_NAME" label="平台名称" width="120"></el-table-column>
+          <el-table-column prop="ORDERID" label="订单编号" width="120"></el-table-column>
+          <el-table-column prop="DRIVERNAME" label="驾驶员姓名" width="120"></el-table-column>
+          <el-table-column prop="LICENSEID" label="驾驶证号" width="160"></el-table-column>
+          <el-table-column prop="VEHICLENO" label="车辆号牌" width="120"></el-table-column>
+          <el-table-column prop="DEPAREA" label="上车地点" width="260"></el-table-column>
+          <el-table-column prop="DEPTIME" label="上车时间" width="160" :formatter="fomarttime"></el-table-column>
+          <el-table-column prop="DESTAREA" label="下车地点" width="160"></el-table-column>
+          <el-table-column prop="DESTTIME" label="下车时间" width="160" :formatter="fomarttime"></el-table-column>
+          <el-table-column prop="FACTPRICE" label="实收金额(元)" width="100"></el-table-column>
+          <el-table-column prop="DRIVETIME" label="载客时间（秒）" width="110"></el-table-column>
+          <el-table-column prop="DRIVEMILE" label="载客里程（千米）" min-width="140"></el-table-column>
+        </el-table>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+
+  import moment from 'moment'
+  import { templateHeight } from '../../assets/js/util'
+  import _ from 'underscore'
+  import { iconClassName, filterTablePage } from '../../assets/js/util'
+  import { ajaxT } from 'util'
+  import { setTimeout } from 'timers'
+  import AMap from 'AMap'
+  import AMapUI from 'AMapUI'
+
+  export default {
+    name: 'HistoricalTrack',
+    data() {
+      return {
+        map: {
+          pathSimplifierIns: null,
+          massMarks: null
+        },
+        loading: false,
+        mapQueryPanel: false,
+        tableType: false,
+        query: {
+          vehino: '',
+          stime: '',
+          etime: ''
+        },
+        table: {
+          monitor: [],
+          order: [],
+          match: []
+        },
+        data: [],
+        activeFlagA: true,
+        activeFlagB: false,
+        activeFlagC: false,
+        options: [],
+        compname: '',
+        displayComp: false,
+        clickFlag: false,
+        move: {},
+        historList: 0,
+        historInterval: null,
+        motion: null,
+        lineList: [],
+        startShow: false,
+        stopShow: false,
+        buttonShow: false
+      }
+    },
+    mounted() {
+      this.$nextTick(() => {
+        this.map = new AMap.Map('gaodeMap', {
+          center: [106.486199, 38.326961],
+          zoom: 12
+        })
+        this.mapQueryPanel = true
+        this.query.stime = this.fomarttime1(
+                new Date(new Date().getTime() - 1000 * 60 * 60 * 2)
+        )
+        this.query.etime = this.fomarttime1(new Date())
+        // this.query.vehino = this.$route.params.vhic
+        const elements = this.$refs['queryBar'].$el
+        templateHeight(this.$refs['queryPanel'], elements)
+        this.getVehi_no()
+      })
+    },
+    computed: {
+      tableColumn() {
+        if (!this.tableType)
+          return [
+            { prop: 'ABB_NAME', label: '平台名称', width: 120 },
+            { prop: 'VEHICLENO', label: '车牌号码', width: 100 },
+            { prop: 'LONGITUDE', label: '经度', width: 120 },
+            { prop: 'LATITUDE', label: '纬度', width: 120 },
+            { prop: 'SPEED', label: '速度(KM/H)', width: 100 },
+            {
+              prop: 'DIRECTION',
+              label: '方向',
+              width: 100,
+              'show-overflow-tooltip': true,
+              formatter: this.fomartfx
+            },
+            { prop: 'ELEVATION', label: '海拔高度(M)', width: 100 },
+            {
+              prop: 'BIZSTATUS',
+              label: '状态',
+              width: 100,
+              'show-overflow-tooltip': true,
+              formatter: this.fomarttype
+            },
+            {
+              prop: 'POSITIONTIME',
+              label: '定位时间',
+              width: 160,
+              'show-overflow-tooltip': true,
+              formatter: this.fomarttime
+            },
+            {
+              prop: 'ORDERID',
+              label: '订单编号',
+              'min-width': 120,
+              resizable: false
+            }
+          ]
+        else
+          return [
+            { prop: 'ABB_NAME', label: '平台名称', width: 120 },
+            { prop: 'ORDERID', label: '订单编号', width: 120 },
+            { prop: 'DRIVERNAME', label: '驾驶员姓名', width: 120 },
+            { prop: 'LICENSEID', label: '驾驶证号', width: 160 },
+            { prop: 'VEHICLENO', label: '车辆号牌', width: 120 },
+            { prop: 'DEPAREA', label: '上车地点', width: 260 },
+            {
+              prop: 'DEPTIME',
+              label: '上车时间',
+              width: 160,
+              formatter: this.fomarttime
+            },
+            { prop: 'DESTAREA', label: '下车地点', width: 160 },
+            {
+              prop: 'DESTTIME',
+              label: '下车时间',
+              width: 160,
+              formatter: this.fomarttime
+            },
+            { prop: 'FACTPRICE', label: '实收金额(元)', width: 100 },
+            { prop: 'DRIVETIME', label: '载客时间（秒）', width: 110 },
+            { prop: 'DRIVEMILE', label: '载客里程（千米）', 'min-width': 140 }
+          ]
+      }
+    },
+    methods: {
+      handleMouseMove(e) {
+        if (this.clickFlag) {
+          let height = e.clientY - 50
+          if (height > 200) {
+            this.$refs.moveMap.style.height = e.clientY - 50 + 'px'
+            this.$refs.moveTable.style.height = `calc(100% - ${height}px)`
+            if (this.activeFlagA) {
+              const elements = this.$refs['queryBar'].$el
+              templateHeight(this.$refs['queryPanel'], elements)
+            }
+            if (this.activeFlagB) {
+              const elements = this.$refs['queryBar'].$el
+              templateHeight(this.$refs['queryPanelB'], elements)
+            }
+          }
+        }
+      },
+      handleMouseUp(e) {
+        this.clickFlag = false
+      },
+      handleMouseDown(e) {
+        console.info('最大高度', this.$refs.wrapper.clientHeight)
+        console.info('地图高度', this.$refs.moveMap)
+        console.info('表格高度', this.$refs.moveTable)
+
+        this.clickFlag = true
+      },
+      changeA() {
+        this.activeFlagA = true
+        this.activeFlagB = false
+        this.activeFlagC = false
+      },
+      changeB() {
+        this.activeFlagA = false
+        this.activeFlagB = true
+        this.activeFlagC = false
+        const elements = this.$refs['queryBar'].$el
+        templateHeight(this.$refs['queryPanelB'], elements)
+      },
+      fomarttime(row, column, date) {
+        return moment(date).format('YYYY-MM-DD HH:mm:ss')
+      },
+      fomarttime1(date) {
+        return moment(date).format('YYYY-MM-DD HH:mm:ss')
+      },
+      fomarttype(row, column, type) {
+        if (type == '1') return '载客'
+        else if (type == '2') return '接单'
+        else if (type == '3') return '空驶'
+        else if (type == '4') return '停运'
+      },
+      fomarttype1(type) {
+        if (type == '1') return '载客'
+        else if (type == '2') return '接单'
+        else if (type == '3') return '空驶'
+        else if (type == '4') return '停运'
+      },
+      fomartfx(row, column, type) {
+        if (type == 0 || type == 360) return '正北'
+        else if (type == 90) return '正东'
+        else if (type == 180) return '正南'
+        else if (type == 270) return '正西'
+        else if (type > 0 && type < 90) return '东北'
+        else if (type > 90 && type < 180) return '东南'
+        else if (type > 180 && type < 270) return '西南'
+        else if (type > 270 && type < 360) return '西北'
+      },
+      iconClassName,
+      queryVehicleSearch(query, cb) {
+        if (query.length < 3) cb([])
+        else {
+          ajaxT
+                  .get('map/getVhic', {
+                    baseURL: this.baseURL,
+                    params: { vhic: this.query.vehino }
+                  })
+                  .then(res => {
+                    let vhicData = []
+                    for (let i = 0; i < res.data.length; i++) {
+                      vhicData.push({
+                        id: res.data[i].VEHICLENO,
+                        lable: res.data[i].VEHICLENO + '(' + res.data[i].ABB_NAME + ')',
+                        value: res.data[i].VEHICLENO + '(' + res.data[i].ABB_NAME + ')'
+                      })
+                    }
+                    cb(vhicData)
+                  })
+        }
+      },
+      handleQueryClick() {
+        this.buttonShow = false
+        const { stime, etime, vehino } = this.query
+        if (stime === ''||!stime) {
+          this.$message({
+            message: '开始时间不能为空！',
+            type: 'warning'
+          })
+          return
+        }
+        if (etime === ''||!etime) {
+          this.$message({
+            message: '结束时间不能为空！',
+            type: 'warning'
+          })
+          return
+        }
+        if (vehino === '') {
+          this.$message({
+            message: '车牌号码不能为空！',
+            type: 'warning'
+          })
+          return
+        }
+        // this.displayComp = false
+        this.loading = true
+        ajaxT
+                .get('map/getHistor', {
+                  baseURL: this.baseURL,
+                  params: {
+                    stime: this.fomarttime1(stime),
+                    etime: this.fomarttime1(etime),
+                    vehi_no: vehino
+                  }
+                })
+                .then(res => {
+                  this.loading = false
+                  this.map.clearMap()
+                  if (this.map.pathSimplifierIns) {
+                    this.map.pathSimplifierIns.setData(null)
+                  }
+                  if(this.map.massMarks){
+                    this.map.massMarks.setMap(null);
+                  }
+                  if (res.data.monitor.length === 0) {
+                    this.$message({
+                      message: '车辆无轨迹！',
+                      type: 'warning'
+                    })
+                    return
+                  }
+                  this.table.monitor = res.data.monitor || [];
+                  this.table.order = res.data.order || []
+                  this.buttonShow = true
+                  this.historyUtil(this.table.monitor)
+                })
+      },
+      /**根据查询后下拉框值确定表格及地图打点**/
+      historyUtil(monitor) {
+        let d = [], a = {}
+        a.path = []
+        a.name = '1'
+        for (let i = 0; i < monitor.length; i++) {
+          let everypath = []
+          everypath.push(monitor[i].LONGITUDE)
+          everypath.push(monitor[i].LATITUDE)
+          a.path.push(everypath)
+        }
+        d.push(a)
+        this.addmar(monitor)
+        //地图轨迹
+        let _this = this
+        AMapUI.load(['ui/misc/PathSimplifier', 'lib/$'], function(PathSimplifier, $) {
+          if (!PathSimplifier.supportCanvas) {
+            alert('当前环境不支持 Canvas！')
+            return
+          }
+          let colors = ['#3366cc', '#dc3912']
+          _this.map.pathSimplifierIns = new PathSimplifier({
+            zIndex: 100,
+            map: _this.map, //所属的地图实例
+            getPath: function(pathData, pathIndex) {
+              return pathData.path
+            },
+            renderOptions: {
+              pathLineStyle: {
+                dirArrowStyle: true
+              },
+              getPathStyle: function(pathItem, zoom) {
+                let color = colors[pathItem.pathIndex],
+                        lineWidth = Math.round(2 * Math.pow(1.1, zoom - 3))
+                return {
+                  pathLineStyle: {
+                    strokeStyle: color,
+                    lineWidth: lineWidth
+                  },
+                  pathLineSelectedStyle: {
+                    lineWidth: lineWidth + 2
+                  },
+                  pathNavigatorStyle: {
+                    fillStyle: color
+                  }
+                }
+              }
+            }
+          })
+
+          function onload() {
+            _this.map.pathSimplifierIns.renderLater()
+          }
+
+          function onerror(e) {
+            alert('图片加载失败！')
+          }
+
+          function getNavg() {
+            //创建一个轨迹巡航器
+            let navg = _this.map.pathSimplifierIns.createPathNavigator(0, {
+              // loop: true,
+              speed: 5000,
+              pathNavigatorStyle: {
+                width: 50,
+                height: 50,
+                content: PathSimplifier.Render.Canvas.getImageContent('image/car/trajectoryCar.png', onload, onerror),
+                zIndex: 102,
+                strokeStyle: null,
+                fillStyle: null
+              }
+            })
+            $('.glyphicon-play').on('click', function() {
+              if(_this.map.massMarks){
+                _this.map.massMarks.setMap(null);
+              }
+              _this.startShow = false
+              _this.stopShow = true
+              navg.start()
+            })
+
+            $('.glyphicon-repeat').on('click', function() {
+              if(_this.map.massMarks){
+                _this.map.massMarks.setMap(null);
+              }
+              _this.stopShow = true
+              _this.startShow = false
+              navg.resume()
+            })
+            $('.glyphicon-pause').on('click', function() {
+              _this.addmar(_this.table.monitor)
+              _this.startShow = true
+              _this.stopShow = false
+              navg.pause()
+            })
+            $('.glyphicon-stop').on('click', function() {
+              _this.addmar(_this.table.monitor)
+              _this.startShow = false
+              _this.stopShow = false
+              navg.stop()
+            })
+          }
+
+          function initRoutesContainer() {
+            let navg = getNavg()
+          }
+
+          window.pathSimplifierIns = _this.map.pathSimplifierIns
+          let flyRoutes = []
+          d.push.apply(d, flyRoutes)
+          _this.map.pathSimplifierIns.setData(d)
+          initRoutesContainer()
+        })
+      },
+      addmar(monitor) {
+        if(this.map.massMarks){
+          this.map.massMarks.setMap(null);
+        }
+        // 样式对象数组
+        let styleObjectArr = [{
+          url: '../image/car/kcl.png',
+          anchor: new AMap.Pixel(20, 20),
+          size: new AMap.Size(42, 42)
+        }, {
+          url: '../image/car/zcl.png',
+          anchor: new AMap.Pixel(20, 20),
+          size: new AMap.Size(42, 42)
+        }]
+        // 设置了样式索引的点标记数组
+        let data = []
+        for (let i = 0; i < monitor.length; i++) {
+          let markerMap={}
+          markerMap.lnglat= [monitor[i].LONGITUDE, monitor[i].LATITUDE]
+          markerMap.name=i
+          markerMap.id=1
+          markerMap.vehicle=monitor[i].VEHICLENO
+          markerMap.style= parseInt(monitor[i].BIZSTATUS) === 1 || parseInt(monitor[i].BIZSTATUS) === 2 ? 1 : 0
+          data.push(markerMap)
+        }
+        // 实例化 AMap.MassMarks
+        this.map.massMarks = new AMap.MassMarks(data,{
+          zIndex: 101, 	// 海量点图层叠加的顺序
+          zooms: [4, 20],	 // 在指定地图缩放级别范围内展示海量点图层
+          style: styleObjectArr ,	//多种样式对象的数组
+        }).on('click', (e) => {
+          let point = e.data.lnglat
+          this.markerVehicle(_.filter(monitor,(item,index)=>{
+            return index===e.data.name;
+          })[0],point);
+        })
+        // 将 massMarks 添加到地图实例
+        this.map.massMarks.setMap(this.map)
+      },
+      //地图信息弹框
+      markerVehicle(item,point) {
+        let txt = '<table><tr><td><b style=\'color:#3399FF\'>网约车-' + item.VEHICLENO + '</b></td>' +
+                '<tr><td><b>[速度]</b>：' + item.SPEED + 'KM/H' + '</td></tr>' +
+                '<tr><td><b>[营运状态]</b>：' + this.fomarttype1(item.BIZSTATUS) + '</td></tr>' +
+                '<tr><td><b>[GPS时间]</b>：' + this.formatterTableTime(item.POSITIONTIME) + '</td></tr>' +
+                '<td></td></tr><tr><td><b>[所属公司]</b>：' + item.ABB_NAME + '</td></tr>' +
+                '<td></td></tr><tr><td><b>[订单编号]</b>：' + item.ORDERID + '</td></tr>' +
+                ''
+        let info = []
+        info.push(txt)
+        this.map.setCenter(point)
+        this.map.infoWindow = new AMap.InfoWindow({
+          offset: new AMap.Pixel(0, 0),
+          content: info.join('</table>')
+        })
+        this.map.infoWindow.open(this.map,point)
+      },
+      formatterTableTime(val) {
+        return (val && moment(val).format('YYYY-MM-DD HH:mm:ss')) || ''
+      },
+      formatterType(type) {
+        type = parseInt(type)
+        if (type === 1) return '载客'
+        else if (type === 2) return '接单'
+        else if (type === 3) return '空驶'
+        else if (type === 4) return '停运'
+      },
+      getVehi_no() {
+        const { vehi_no } = this.$route.params
+        console.log('vehi:', vehi_no)
+        if (!vehi_no) return
+        this.query.vehino = vehi_no
+        this.handleQueryClick()
+      }
+    },
+    watch: {
+      '$route'() {
+        this.getVehi_no()
+      }
+    }
+  }
+</script>
+
+<style lang="scss" scoped>
+  $font-color: #374873;
+  $border-color: #69a7f7;
+  .tw-template-wrapper {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tw-map {
+    &-query-panel {
+      top: auto;
+      bottom: 30px;
+      width: calc(100% - 250px);
+      height: 280px;
+      min-height: 230px;
+    }
+
+    &-tool {
+      &-bar {
+        top: 40px;
+        right: 50px;
+      }
+
+      &-right {
+        right: 0;
+      }
+    }
+  }
+
+  .tw-query-bar {
+    padding-top: 0;
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  // 滑动面板 从下到上
+  .mapQueryPanel--bottom {
+    &-enter-active,
+    &-leave-active {
+      transition: bottom 0.5s ease;
+    }
+
+    &-enter,
+    &-leave-to {
+      bottom: -450px;
+    }
+  }
+
+  .map-box {
+    height: calc(100% - 250px);
+  }
+
+  .query-table {
+    position: relative;
+    height: 250px;
+    border-top: 1px solid #cccccc;
+    padding: 5px;
+    box-sizing: border-box;
+  }
+
+  $tab-width: 150px;
+  $tab-height: 30px;
+  .tw-tab {
+    position: absolute;
+    top: -$tab-height;
+    height: $tab-height;
+    background-color: #ffffff;
+    box-sizing: border-box;
+    border-right: 1px solid $border-color;
+    border-top: 1px solid $border-color;
+    width: $tab-width;
+    color: $border-color;
+    text-align: center;
+    line-height: 30px;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.5s ease;
+    cursor: pointer;
+    border-bottom: 1px #cccccc;
+
+    &.active {
+      background-color: $border-color;
+      color: #ffffff;
+      border-bottom: none;
+    }
+
+    &.one {
+    }
+
+    &.two {
+      left: 155px;
+    }
+
+    &.three {
+      left: 305px;
+    }
+  }
+</style>

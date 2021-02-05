@@ -1,0 +1,59 @@
+<!-- 车辆里程预警 -->
+<template>
+  <t-query-panel :model="query" size="medium">
+    <template v-slot:querybar>
+      <el-form-item>
+        <el-input v-model="query.ptmc" placeholder="平台名称"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-input v-model="query.cphm" placeholder="车牌号码"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-input v-model="query.xslc" placeholder="总行驶里程"></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-select v-model="query.state" placeholder="请选择">
+          <el-option
+            v-for="item in query.stateOptions"
+            :key="item.value"
+            :label="item.label"
+            :value="item.value"
+          >
+          </el-option>
+        </el-select>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary">查询</el-button>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary">导出</el-button>
+      </el-form-item>
+    </template>
+    <t-table-page :loading="table.loading" :page-size="table.pageSize" :data="table.data">
+      <t-table-column type="index" label="序号" width="60"></t-table-column>
+      <t-table-column label="平台公司名称" width="340"></t-table-column>
+      <t-table-column prop="CPHM" label="车牌号码" width="340"></t-table-column>
+      <t-table-column prop="MILEAGE" label="总行驶里程(千米)" width="240"></t-table-column>
+      <t-table-column prop="" label="状态" width="240"></t-table-column>
+    </t-table-page>
+  </t-query-panel>
+</template>
+
+<script>
+export default {
+  name: 'VehicleMileageWarning',
+  data() {
+    return {
+      query: {
+        ptmc: '',
+        cphm: '',
+        xslc: '',
+        state: '',
+        stateOptions: []
+      }
+    }
+  }
+}
+</script>
+
+<style></style>

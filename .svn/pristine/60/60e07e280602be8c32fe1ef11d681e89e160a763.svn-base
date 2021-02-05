@@ -1,0 +1,11 @@
+import _ from 'underscore'
+import { data as menu } from './menu.config.json'
+import { data as head } from './head.config.json'
+
+export function getMenu() {
+  return menu
+}
+
+export function getHeadMenu() {
+  return head
+}

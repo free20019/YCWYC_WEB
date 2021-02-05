@@ -1,0 +1,157 @@
+<!-- 历史轨迹 -->
+<template>
+  <div class="tw-template-wrapper" @mousemove="handleMouseMove" @mouseup="handleMouseUp">
+    <div class="tw-top" ref="top">
+      <div id="map"></div>
+    </div>
+    <div class="tw-bottom" ref="bottom">
+      <div class="tw-move-line" @mousedown="handleMouseDown"></div>
+      <div class="tw-tab">
+        <div class="tw-item" :class="{ active: tab.name == 'dingwei' }">定位</div>
+        <div class="tw-item" :class="{ active: tab.name == 'dingdan' }">订单</div>
+      </div>
+      <t-query-panel :model="query" size="small">
+        <template v-slot:querybar>
+          <el-form-item>
+            <el-input v-model="query.cphm" placeholder="车牌号码"></el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-date-picker v-model="query.stime" type="date" placeholder="开始日期"> </el-date-picker>
+          </el-form-item>
+          <el-form-item>
+            <el-date-picker v-model="query.etime" type="date" placeholder="结束日期"> </el-date-picker>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleQueryClick">查询</el-button>
+          </el-form-item>
+        </template>
+        <el-table v-show="tab.name == 'dingwei'" size="small" height="100%" border :loading="table.loading" :data="table.data">
+          <el-table-column align="center" prop="ABB_NAME" label="平台名称" width="120"></el-table-column>
+          <el-table-column align="center" prop="VEHICLENO" label="车牌号码" width="100"></el-table-column>
+          <el-table-column align="center" prop="LONGITUDE" label="经度" width="120"></el-table-column>
+          <el-table-column align="center" prop="LATITUDE" label="纬度" width="120"></el-table-column>
+          <el-table-column align="center" prop="SPEED" label="速度(KM/H)" width="100"></el-table-column>
+          <el-table-column align="center" prop="DIRECTION" label="方向" width="100"></el-table-column>
+          <el-table-column align="center" prop="ELEVATION" label="海拔高度(M)" width="100"></el-table-column>
+          <el-table-column align="center" prop="BIZSTATUS" label="状态" width="100"></el-table-column>
+          <el-table-column align="center" prop="POSITIONTIME" label="定位时间" width="160"></el-table-column>
+          <el-table-column align="center" prop="ORDERID" label="订单编号" min-width="120"></el-table-column>
+        </el-table>
+        <el-table v-show="tab.name == 'dingdan'" size="small" height="100%" border :loading="table.loading" :data="table.data">
+          <el-table-column align="center" prop="ABB_NAME" label="平台名称" width="120"></el-table-column>
+          <el-table-column align="center" prop="ORDERID" label="订单编号" width="120"></el-table-column>
+          <el-table-column align="center" prop="DRIVERNAME" label="驾驶员姓名" width="120"></el-table-column>
+          <el-table-column align="center" prop="LICENSEID" label="驾驶证号" width="160"></el-table-column>
+          <el-table-column align="center" prop="VEHICLENO" label="车辆号牌" width="120"></el-table-column>
+          <el-table-column align="center" prop="DEPAREA" label="上车地点" width="260"></el-table-column>
+          <el-table-column align="center" prop="DEPTIME" label="上车时间" width="160"></el-table-column>
+          <el-table-column align="center" prop="DESTAREA" label="下车地点" width="160"></el-table-column>
+          <el-table-column align="center" prop="DESTTIME" label="下车时间" width="160"></el-table-column>
+          <el-table-column align="center" prop="FACTPRICE" label="实收金额(元)" width="100"></el-table-column>
+          <el-table-column align="center" prop="DRIVETIME" label="载客时间（秒）" width="110"></el-table-column>
+          <el-table-column align="center" prop="DRIVEMILE" label="载客里程（千米）" min-width="140"></el-table-column>
+        </el-table>
+      </t-query-panel>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'HistoricalTrack',
+  data() {
+    return {
+      query: {
+        cphm: '',
+        stime: '',
+        etime: ''
+      },
+      table: {
+        data: [],
+        loading: false
+      },
+      move: {
+        dis: 0,
+        flag: false
+      },
+      tab: {
+        name: 'dingwei'
+      },
+      map: null
+    }
+  },
+  mounted() {
+    this.initMap()
+  },
+  methods: {
+    initMap() {
+      this.map = new AMap.Map('map', {})
+    },
+    // 查询
+    handleQueryClick() {},
+    handleMouseDown(e) {
+      this.move.flag = true
+    },
+    handleMouseMove(e) {
+      if (this.move.flag) {
+        let height = e.clientY - 50 - 41
+        this.$refs.top.style.height = height + 'px'
+        this.$refs.bottom.style.height = `calc(100% - ${height}px)`
+      }
+    },
+    handleMouseUp() {
+      this.move.flag = false
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.tw-top {
+  height: calc(100% - 250px);
+}
+.tw-bottom {
+  position: relative;
+  height: 250px;
+}
+.tw-move-line {
+  position: absolute;
+  top: -2px;
+  width: 100%;
+  height: 4px;
+  cursor: n-resize;
+  background-color: #eeeeee;
+}
+.tw-tab {
+  position: absolute;
+  top: -30px;
+  left: 5px;
+  display: flex;
+  z-index: 20;
+  .tw-item {
+    height: 30px;
+    box-sizing: border-box;
+    border-right: 1px solid #69a7f7;
+    border-top: 1px solid #69a7f7;
+    border-bottom: 1px solid #ffffff;
+    background-color: #ffffff;
+    text-align: center;
+    line-height: 30px;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.5s ease;
+    color: #69a7f7;
+    cursor: pointer;
+    width: 150px;
+    &.active,
+    &:hover {
+      background-color: #69a7f7;
+      color: #ffffff;
+      border-bottom: none;
+    }
+  }
+}
+.t-query-panel {
+  height: 100% !important;
+}
+</style>

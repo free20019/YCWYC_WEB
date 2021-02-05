@@ -1,0 +1,232 @@
+<!-- 交通部数据/静态数据查询/经营支付表  -->
+<template xmlns:v-slot="http://www.w3.org/1999/XSL/Transform">
+    <t-query-panel :model="query" size="medium">
+        <template v-slot:querybar>
+            <el-form-item>
+                <el-select v-model="query.ptname" clearable placeholder="平台名称">
+                    <el-option
+                            v-for="item in getAutoCompanyName"
+                            :key="item.onlyId"
+                            :label="item.label"
+                            :value="item.value"
+                    ></el-option>
+                </el-select>
+            </el-form-item>
+            <el-form-item>
+                <el-autocomplete
+                        v-model="query.vehicle"
+                        :fetch-suggestions="handleVehicleQuerySearch"
+                        :trigger-on-focus="false"
+                        placeholder="车牌号码"
+                ></el-autocomplete>
+            </el-form-item>
+            <el-form-item>
+                <el-input v-model="query.driverName" placeholder="机动车驾驶证员姓名"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-input v-model="query.licenseId" placeholder="机动车驾驶员证号"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-date-picker v-model="query.stime" type="datetime" placeholder="开始日期">
+                </el-date-picker>
+            </el-form-item>
+            <el-form-item>
+                <el-date-picker v-model="query.etime" type="datetime" placeholder="结束日期">
+                </el-date-picker>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="handleQueryClick">查询</el-button>
+            </el-form-item>
+        </template>
+        <t-table-page
+                :loading="table.loading"
+                :data="table.data"
+                :page-size="table.pageSize"
+                :page-total="table.total"
+                @current-change="handlePageChange"
+        >
+            <t-table-column type="index" label="序号" width="60"></t-table-column>
+            <t-table-column prop="COMPANYNAME" label="公司" width="240"></t-table-column>
+            <t-table-column prop="ORDERID" label="订单号" width="180"></t-table-column>
+            <t-table-column prop="ONAREA" label="上车位置行政区划编号" width="180"></t-table-column>
+            <t-table-column prop="DRIVERNAME" label="机动车驾驶员姓名" width="180"></t-table-column>
+            <t-table-column prop="LICENSEID" label="机动车驾驶证号" width="180"></t-table-column>
+            <t-table-column prop="FARETYPE" label="运价类型编码" width="180"></t-table-column>
+            <t-table-column prop="VEHICLENO" label="车辆号牌" width="180"></t-table-column>
+            <t-table-column prop="BOOKDEPTIME" label="预计上车时间" :formatter="formatterTableTime" width="180"></t-table-column>
+            <t-table-column prop="WAITTIME" label="等待时间" width="180"></t-table-column>
+            <t-table-column prop="DEPLONGITUDE" label="车辆出发经度" width="180"></t-table-column>
+            <t-table-column prop="DEPLATITUDE" label="车辆出发纬度" width="180"></t-table-column>
+            <t-table-column prop="DEPAREA" label="上车地点" width="180"></t-table-column>
+            <t-table-column prop="DEPTIME" label="上车时间" :formatter="formatterTableTime" width="180"></t-table-column>
+            <t-table-column prop="DESTLONGITUDE" label="车辆到达经度" width="180"></t-table-column>
+            <t-table-column prop="DESTLATITUDE" label="车辆到达纬度" width="180"></t-table-column>
+            <t-table-column prop="DESTAREA" label="下车地点" width="180"></t-table-column>
+            <t-table-column prop="DESTTIME" label="下车时间" :formatter="formatterTableTime" width="180"></t-table-column>
+            <t-table-column prop="BOOKMODEL" label="预定车型" width="180"></t-table-column>
+            <t-table-column prop="MODEL" label="实际使用车型" width="180"></t-table-column>
+            <t-table-column prop="DRIVEMILE" label="载客里程（千米）" width="180"></t-table-column>
+            <t-table-column prop="DRIVETIME" label="载客时间（秒）" width="180"></t-table-column>
+            <t-table-column prop="WAITMILE" label="空驶里程（千米）" width="180"></t-table-column>
+            <t-table-column prop="FACTPRICE" label="实收金额(元)" width="180"></t-table-column>
+            <t-table-column prop="PRICE" label="应收金额(元)" width="180"></t-table-column>
+            <t-table-column prop="CASHPRICE" label="现金支付金额(元)" width="180"></t-table-column>
+            <t-table-column prop="LINENAME" label="电子支付机构" width="180"></t-table-column>
+            <t-table-column prop="LINEPRICE" label="电子支付金额(元)" width="180"></t-table-column>
+            <t-table-column prop="POSNAME" label="POS机支付机构" width="180"></t-table-column>
+            <t-table-column prop="POSPRICE" label="POS机支付金额(元)" width="180"></t-table-column>
+            <t-table-column prop="BENFITPRICE" label="优惠金额(元)" width="180"></t-table-column>
+            <t-table-column prop="BOOKTIP" label="预约服务费(元)" width="180"></t-table-column>
+            <t-table-column prop="PASSENGERTIP" label="附加费(元)" width="180"></t-table-column>
+            <t-table-column prop="PEAKUPPRICE" label="高峰时段时间加价金额(元)" width="180"></t-table-column>
+            <t-table-column prop="NIGHTUPPRICE" label="夜间时段里程加价金额(元)" width="180"></t-table-column>
+            <t-table-column prop="FARUPPRICE" label="远途加价金额(元)" width="180"></t-table-column>
+            <t-table-column prop="OTHERUPPRICE" label="其他加价金额(元)" width="180"></t-table-column>
+            <t-table-column prop="PAYSTATE" label="结算状态" width="180"></t-table-column>
+            <t-table-column prop="PAYTIME" label="乘客结算时间" :formatter="formatterTableTime" width="180"></t-table-column>
+            <t-table-column prop="ORDERMATCHTIME" label="订单完成时间" :formatter="formatterTableTime" width="180"></t-table-column>
+            <t-table-column prop="INVOICESTATUS" label="发票状态" width="180"></t-table-column>
+            <t-table-column prop="DBTIME" label="入库时间" :formatter="formatterTableTime" min-width="180"></t-table-column>
+        </t-table-page>
+    </t-query-panel>
+</template>
+
+<script>
+  import { ajaxT } from 'util'
+  import _ from 'underscore'
+  import { mapGetters } from 'vuex'
+  import moment from 'moment'
+
+  export default {
+    name: 'BusinessPay',
+    data() {
+      return {
+        query: {
+          ptname: '0',
+          vehicle: '',
+          driverName: '',
+          licenseId: '',
+          stime: '',
+          etime: ''
+        },
+        table: {
+          loading: false,
+          data: [],
+          pageSize: 15,
+          page: 1,
+          total: 0
+        },
+        select: {
+          vehicle: []
+        }
+      }
+    },
+    mounted() {
+      this.query.stime = new Date(moment().startOf('day'))
+      this.query.etime = new Date()
+      this.getTableData()
+      this.findVehicle()
+    },
+    computed: {
+      ...mapGetters(['getAutoCompanyName'])
+    },
+    methods: {
+      handleVehicleQuerySearch(query, cb) {
+        if (query.length < 3) return cb([])
+        cb(_.filter(this.select.vehicle, item => item.value.indexOf(query) > -1))
+      },
+      findVehicle(){
+        ajaxT.get('dynamicData/findVehicle', {
+          baseURL: this.baseURL
+        }).then(res=> {
+          this.select.vehicle = _.map(res.data, item => {
+            return {
+              value: item.VEHICLE_NO
+            }
+          });
+        }).catch(function (error) {
+        });
+      },
+      handleQueryClick() {
+        this.table.page = 1
+        this.getTableData()
+      },
+      formatterTableTime(a, b, val) {
+        return (val && moment(val).format('YYYY-MM-DD HH:mm:ss')) || ''
+      },
+      formatterEncryptBS(a, b, val) {
+        val = parseInt(val);
+        if(val=== 1){
+          return 'GCJ-02';
+        }else if(val===2){
+          return 'WGS84 GPS';
+        }else if(val===3){
+          return 'BD-09';
+        }else if(val===0){
+          return '其他';
+        }else {
+          return '';
+        }
+      },
+      getTableData() {
+        const { ptname, vehicle, driverName, licenseId, stime, etime } = this.query
+        if (!stime || !etime) return this.$message.error('请选择时间！')
+        if ((stime && moment(stime).format('YYYY-MM')) !== (etime && moment(etime).format('YYYY-MM'))) return this.$message.error('无法跨月查询！')
+        const { page, pageSize } = this.table
+        this.table.loading = true
+        this.getData({
+          ptname,
+          vehicle,
+          driverName,
+          licenseId,
+          stime,
+          etime,
+          page,
+          pageSize
+        }).then(res => {
+          this.table.data = res.datas || []
+          // 总数
+          this.table.total = parseInt(res.count)
+          this.table.loading = false
+        })
+      },
+
+      getData(data) {
+        let params = `postData={
+        'ptname':'${data.ptname}',
+        'vehicle':'${data.vehicle}',
+        'driverName':'${data.driverName}',
+        'licenseId':'${data.licenseId}',
+        'begintime':'${(data.stime && moment(data.stime).format('YYYY-MM-DD')) || ''}',
+        'endtime':'${(data.etime && moment(data.etime).format('YYYY-MM-DD')) || ''}',
+        'pageIndex':'${data.page}',
+        'pageSize':'${data.pageSize}'
+        }`
+        return ajaxT.post('dynamicData/findOperatePay', params).then(res => res.data)
+      },
+
+      handlePageChange(val) {
+        this.table.page = val.currentPage
+        this.getTableData()
+      }
+    },
+    watch: {
+      'query.stime': {
+        handler(newVal, oldVal) {
+          if (!newVal) this.query.stime = oldVal
+        }
+      },
+      'query.etime': {
+        handler(newVal, oldVal) {
+          if (!newVal) this.query.etime = oldVal
+        }
+      }
+    }
+  }
+</script>
+
+<style></style>
+
+
+
+

@@ -1,0 +1,53 @@
+<!-- 区域管理  -->
+<template>
+  <div class="tw-template-wrapper">
+    <div class="tw-top">
+      <div id="map"></div>
+    </div>
+    <div class="tw-bottom">
+      <t-query-panel :model="query" size="small">
+        <template v-slot:querybar>
+          <el-form-item>
+            <el-button type="primary">添加</el-button>
+          </el-form-item>
+        </template>
+        <el-table size="small" height="100%" border :loading="table.loading" :data="table.data"></el-table>
+      </t-query-panel>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'RegionalManagement',
+  data() {
+    return {
+      query: {},
+      table: {
+        data: [],
+        loading: false
+      }
+    }
+  },
+  mounted() {
+    this.intiMap()
+  },
+  methods: {
+    intiMap() {
+      this.map = new AMap.Map('map', {})
+    }
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.tw-top {
+  height: calc(100% - 300px);
+}
+.tw-bottom {
+  height: 300px;
+}
+.t-query-panel {
+  height: 100% !important;
+}
+</style>

@@ -1,0 +1,338 @@
+<!-- 营运总览 -->
+<template>
+  <div class="tw-template-wrapper">
+    <div class="tw-left">
+      <div class="tw-left_top">
+        <!-- 左 上 头部 -->
+        <div class="tw-left_top__head">
+          <div class="tw-item">
+            <div class="tw-title">企业许可</div>
+            <div class="tw-info">
+              <span>47</span>
+              <span>家</span>
+            </div>
+          </div>
+          <div class="tw-item">
+            <div class="tw-title">驾驶员</div>
+            <div class="tw-info">
+              <span>194076</span>
+              <span>人</span>
+            </div>
+          </div>
+          <div class="tw-item">
+            <div class="tw-title">车辆</div>
+            <div class="tw-info">
+              <span>76222</span>
+              <span>辆</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- 左下 -->
+      <div class="tw-left_bottom">
+        <!-- 左下头部 -->
+        <div class="tw-left_bottom__tab clearfix">
+          <div
+            class="tw-tab-item"
+            :class="{ active: tab.head == 'hangyerijun' }"
+            @click="handleLBTabsClick('hangyerijun')"
+          >
+            行业日均
+          </div>
+          <div
+            class="tw-tab-item"
+            :class="{ active: tab.head == 'dancherijun' }"
+            @click="handleLBTabsClick('dancherijun')"
+          >
+            单车日均
+          </div>
+        </div>
+        <!-- 左下内容 -->
+        <div class="tw-left_bottom__content">
+          <div class="tw-tab">
+            <div class="tw-item">日均活跃车辆</div>
+            <div class="tw-item">日均接单</div>
+            <div class="tw-item">日均完单</div>
+          </div>
+          <div class="tw-echart"></div>
+        </div>
+      </div>
+    </div>
+    <div class="tw-right">
+      <table class="tw-right_table">
+        <thead>
+          <td></td>
+          <td
+            class="tw-item"
+            @click="handleTableHeadClick('paidan')"
+            :class="{ active: rightTopData.activeName == 'paidan' }"
+          >
+            接单
+          </td>
+          <td
+            class="tw-item"
+            @click="handleTableHeadClick('wandan')"
+            :class="{ active: rightTopData.activeName == 'wandan' }"
+          >
+            完单
+          </td>
+          <!-- <td>接单时长</td> -->
+          <td
+            class="tw-item"
+            @click="handleTableHeadClick('huoyuecheliang')"
+            :class="{ active: rightTopData.activeName == 'huoyuecheliang' }"
+          >
+            活跃车辆
+          </td>
+        </thead>
+        <tbody>
+          <tr>
+            <td>今日累计</td>
+            <td>{{ dayData.jrpd }}</td>
+            <td>{{ dayData.jrwd }}</td>
+            <td>{{ dayData.jrhy }}</td>
+          </tr>
+          <tr>
+            <td>昨日同比</td>
+            <td>{{ dayData.zrpd }}</td>
+            <td>{{ dayData.zrwd }}</td>
+            <td>{{ dayData.zrhy }}</td>
+          </tr>
+          <tr>
+            <td>上周同比</td>
+            <td>{{ dayData.szpd }}</td>
+            <td>{{ dayData.szwd }}</td>
+            <td>{{ dayData.szhy }}</td>
+          </tr>
+          <tr>
+            <td>上月同比</td>
+            <td>{{ dayData.sypd }}</td>
+            <td>{{ dayData.sywd }}</td>
+            <td>{{ dayData.syhy }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div id="right_mid-echart">
+        <div id="rmEchart"></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'OperationOverview',
+  data() {
+    return {
+      tab: {
+        head: 'hangyerijun',
+        item: ''
+      },
+      // 表格头部
+      rightTopData: {
+        activeName: 'huoyuecheliang'
+      },
+      // 表格内容
+      dayData: {
+        jrpd: 0,
+        jrwd: 0,
+        jrsc: 0,
+        jrhy: 0,
+        zrpd: 0,
+        zrwd: 0,
+        zrsc: 0,
+        zrhy: 0,
+        szpd: 0,
+        szwd: 0,
+        szsc: 0,
+        szhy: 0,
+        sypd: 0,
+        sywd: 0,
+        sysc: 0,
+        syhy: 0
+      }
+    }
+  },
+  methods: {
+    // 行业日均 单车日均点击事件
+    handleLBTabsClick(type) {
+      this.tab.head = type
+    },
+    // 右上表格点击
+    handleTableHeadClick() {}
+  }
+}
+</script>
+
+<style lang="scss" scoped>
+.tw-template-wrapper {
+  background-color: #eff3fe;
+  display: flex;
+}
+
+.tw-left {
+  width: 60%;
+  &_top {
+    height: 65%;
+  }
+  &_bottom {
+    height: 35%;
+  }
+}
+.tw-right {
+  width: 40%;
+}
+// 左边上面部分样式
+.tw-left_top {
+  // 顶部样式
+  &__head {
+    height: 50px;
+    display: flex;
+    .tw-item {
+      width: calc((100% - 120px) / 3);
+      box-sizing: border-box;
+      border: 1px solid #356bd4;
+      display: flex;
+      &:first-child,
+      &:last-child {
+        margin: 0 30px;
+      }
+      .tw-title {
+        width: 40%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        line-height: 30px;
+        margin: 10px 0;
+        text-align: center;
+        font-size: 17px;
+        font-weight: 600;
+        color: #356bd4;
+        box-sizing: border-box;
+        border-right: 1px solid #356bd4;
+      }
+      .tw-info {
+        width: 60%;
+        text-align: center;
+        line-height: 50px;
+        box-sizing: border-box;
+        span {
+          user-select: none;
+          &:first-child {
+            font-size: 30px;
+            color: #e95522;
+          }
+          &:last-child {
+            font-size: 15px;
+          }
+        }
+      }
+    }
+  }
+}
+// 左下样式
+.tw-left_bottom {
+  // 头部样式
+  &__tab {
+    height: 40px;
+    background-color: #e5e5e5;
+    .tw-tab-item {
+      float: left;
+      line-height: 40px;
+      font-size: 18px;
+      padding: 0 20px;
+      color: #000000;
+      position: relative;
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s ease-in-out;
+      &.active {
+        font-weight: 600;
+      }
+
+      &::after {
+        content: '';
+        position: absolute;
+        left: 0;
+        bottom: 0;
+        z-index: 0;
+        width: 0;
+        height: 2px;
+        background-color: #1e2796;
+        transition: width 0.3s ease-in-out;
+      }
+      &.active,
+      &:hover {
+        background-color: #eeeeee;
+        color: #1e2796;
+        &::after {
+          width: 100%;
+        }
+      }
+    }
+  }
+  // 内容样式
+  &__content {
+    height: calc(100% - 40px);
+    .tw-tab {
+      padding: 10px 0 0 90px;
+      .tw-item {
+        display: inline-block;
+        line-height: 1;
+        white-space: nowrap;
+        cursor: pointer;
+        background-color: #eff3fe;
+        border: 1px solid #dcdfe6;
+        color: #606266;
+        text-align: center;
+        box-sizing: border-box;
+        outline: 0;
+        margin: 0;
+        transition: 0.1s;
+        font-weight: 500;
+        padding: 9px 15px;
+        font-size: 12px;
+        border-radius: 3px;
+        margin-left: 10px;
+        &:hover,
+        &.active {
+          color: #409eff;
+          border-color: #c6e2ff;
+          background-color: #ecf5ff;
+        }
+      }
+    }
+    .tw-echart {
+      height: calc(100% - 42px);
+    }
+  }
+}
+.tw-right {
+  &_table {
+    width: 100%;
+    thead {
+      background-color: #7dc7f8;
+      color: #ffffff;
+      .tw-item {
+        cursor: pointer;
+        &.active {
+          background-color: #62baf9;
+        }
+      }
+    }
+    td {
+      padding: 7px 10px;
+      font-size: 15px;
+      text-align: center;
+    }
+    tr {
+      border-bottom: 1px solid #eeeeee;
+    }
+  }
+}
+#right_mid-echart {
+  height: 300px;
+  box-sizing: border-box;
+  padding: 5px;
+}
+</style>

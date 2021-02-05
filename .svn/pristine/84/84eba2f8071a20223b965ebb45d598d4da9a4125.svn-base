@@ -1,0 +1,10 @@
+<!-- 区域监控 -->
+<template> </template>
+
+<script>
+export default {
+  name: 'AreaMonitoring'
+}
+</script>
+
+<style></style>

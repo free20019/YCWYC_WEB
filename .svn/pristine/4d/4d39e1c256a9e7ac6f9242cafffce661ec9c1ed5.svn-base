@@ -1,0 +1,10 @@
+<!-- 交通部数据/静态数据查询/驾驶员移动终端表  -->
+<template> </template>
+
+<script>
+export default {
+  name: 'DriverMobileTerminalInformation'
+}
+</script>
+
+<style></style>

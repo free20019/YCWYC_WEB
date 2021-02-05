@@ -1,0 +1,96 @@
+<!-- 异常经营统计 -->
+<template>
+  <t-query-panel :model="query" size="medium">
+    <template v-slot:querybar>
+      <el-form-item>
+        <el-date-picker v-model="query.stime" type="date" placeholder="选择日期"> </el-date-picker>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary">查询</el-button>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary">导出</el-button>
+      </el-form-item>
+    </template>
+    <el-table
+      :data="table.data"
+      v-loading="table.loading"
+      border
+      stripe
+      height="100%"
+      :default-sort="{ prop: 'CAR_NUM', order: 'descending' }"
+    >
+      <el-table-column type="index" align="center" label="序号" width="60"></el-table-column>
+      <el-table-column prop="COMPANYNAME" align="center" label="平台名称" min-width="160"></el-table-column>
+      <el-table-column
+        prop="CAR_NUM"
+        align="center"
+        sortable
+        label="动态车辆数"
+        width="140"
+      ></el-table-column>
+      <el-table-column prop="YBZS" align="center" label="车辆已办证数" width="180"></el-table-column>
+      <el-table-column prop="DRIVER_NUM" align="center" label="动态驾驶员数" width="160"></el-table-column>
+      <el-table-column
+        prop="DRIVER_LICENSE_NUM"
+        align="center"
+        label="驾驶员已办证数"
+        width="160"
+      ></el-table-column>
+      <el-table-column prop="DAY_ORDER" align="center" label="今日订单数" width="160"></el-table-column>
+      <el-table-column
+        prop="COMPLIANCE_ORDER"
+        align="center"
+        label="双合规订单数"
+        width="140"
+      ></el-table-column>
+      <el-table-column prop="COMPLIANCE_RATE" align="center" label="合规率" width="140"></el-table-column>
+      <el-table-column
+        prop="COMPLIANCE_PEOPLE"
+        align="center"
+        label="双合规人车数"
+        width="140"
+      ></el-table-column>
+      <el-table-column
+        prop="CAR_COMPLIANCE_ORDER"
+        align="center"
+        label="车合规订单数"
+        width="140"
+      ></el-table-column>
+      <el-table-column
+        prop="PEOPLE_COMPLIANCE_ORDER"
+        align="center"
+        label="人合规订单数"
+        width="140"
+      ></el-table-column>
+      <el-table-column
+        prop="VIOLATION_ORDER"
+        align="center"
+        label="双违规订单数"
+        width="140"
+      ></el-table-column>
+    </el-table>
+  </t-query-panel>
+</template>
+
+<script>
+import moment from 'moment'
+export default {
+  name: 'AbnormalOperationStatistics',
+  data() {
+    return {
+      query: {
+        stime: moment()
+          .subtract(1, 'days')
+          .format('YYYY-MM-DD')
+      },
+      table: {
+        data: [],
+        loading: false
+      }
+    }
+  }
+}
+</script>
+
+<style></style>

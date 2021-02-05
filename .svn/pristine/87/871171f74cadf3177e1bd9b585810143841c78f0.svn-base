@@ -1,0 +1,41 @@
+<!-- 交通部数据/静态数据查询/平台公司基本信息表  -->
+<template>
+  <t-query-panel :model="query" size="medium">
+    <template v-slot:querybar>
+      <el-form-item>
+        <el-input></el-input>
+      </el-form-item>
+      <el-form-item>
+        <el-button type="primary">查询</el-button>
+      </el-form-item>
+    </template>
+    <t-table-page :loading="table.loading" :data="table.data" :page-size="table.pageSize">
+      <t-table-column prop="name" label="name"></t-table-column>
+    </t-table-page>
+  </t-query-panel>
+</template>
+
+<script>
+export default {
+  name: 'CompanyBasicInformation',
+  data() {
+    return {
+      query: {},
+      table: {
+        loading: false,
+        data: [{ name: '1' }, { name: '2' }, { name: '23' }],
+        pageSize: 2,
+        page: 1,
+        total: 2
+      },
+      dialog: {
+        display: false,
+        title: '',
+        form: {}
+      }
+    }
+  }
+}
+</script>
+
+<style></style>

@@ -1,0 +1,139 @@
+@import "./mixins.scss";
+@import "./menu.scss";
+@import "./reset.scss";
+
+html,
+body {
+  height: 100%;
+}
+
+#app {
+  height: 100%;
+  font-family: "Avenir", Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.el-tabs__header {
+  margin: 0 !important;
+}
+.tw-layout-body {
+  height: 100%;
+}
+.t-query-panel {
+  height: calc(100% - 41px) !important;
+}
+.tw-template-wrapper {
+  height: calc(100% - 41px);
+}
+.tw-map-tool {
+  .tw-tool_tabs {
+    .el-tabs__nav-prev,
+    .el-tabs__nav-next {
+      background-color: #ffffff;
+      line-height: 52px;
+    }
+    .el-tabs__item {
+      height: 100%;
+      background-color: #ffffff;
+      text-align: center;
+      position: relative;
+      padding: 0px !important;
+    }
+  }
+}
+.tw-map-content {
+  .amap-logo,
+  .amap-copyright {
+    display: none !important;
+  }
+}
+#map {
+  height: 100%;
+}
+.amap-logo,
+.amap-copyright {
+  display: none !important;
+}
+.tw__page {
+  &.query {
+    &.el-pagination {
+      padding-top: 14px;
+      padding-bottom: 0;
+    }
+  }
+  &.el-pagination {
+    padding-top: 7px;
+    padding-bottom: 7px;
+  }
+}
+// 特殊目标查询样式
+.tw-query-panel.dialog_no + .el-dialog__wrapper {
+  overflow: hidden;
+  .el-dialog.dialog-big.big {
+    margin-top: 50px !important;
+    .el-dialog__body {
+      padding: 0;
+    }
+  }
+}
+.tw-dialog-title {
+  padding: 5px 5px 5px 20px;
+  border-bottom: 1px solid #cccccc;
+  position: relative;
+  div {
+    font-size: 16px;
+    line-height: 16px;
+    color: #3c96f0;
+    font-weight: bold;
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 4px;
+      bottom: 4px;
+      width: 4px;
+
+      background: #3c96f0;
+    }
+  }
+}
+.tw-form {
+  $margin: 10px;
+  $borderColor_default: #eeeeee;
+  @mixin formItem($width) {
+    .el-form-item {
+      &__label {
+        float: left;
+        width: $width;
+      }
+
+      &__content {
+        display: block;
+        margin-left: $width;
+      }
+    }
+  }
+  @mixin form() {
+    .el-form {
+      &-item {
+        &.tw-block {
+          display: block;
+          @include formItem(80px);
+
+          &.tw-size__150px {
+            @include formItem(150px);
+          }
+        }
+        margin-bottom: $margin;
+        &.el-form-item--mini,
+        &.el-form-item--small {
+          margin-bottom: $margin;
+        }
+      }
+    }
+  }
+  @include form;
+  padding: $margin $margin 0 $margin;
+  border-bottom: 1px solid $borderColor_default;
+}
+// --------------------------------

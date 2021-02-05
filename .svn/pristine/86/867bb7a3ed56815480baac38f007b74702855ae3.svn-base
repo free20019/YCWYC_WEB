@@ -1,0 +1,10 @@
+<!-- 交通部数据/静态数据查询/驾驶员培训信息表  -->
+<template> </template>
+
+<script>
+export default {
+  name: 'DriverTrainInformation'
+}
+</script>
+
+<style></style>

@@ -1,0 +1,51 @@
+import Vue from 'vue'
+import VueRouter from 'vue-router'
+import Home from '../views/Home.vue'
+
+Vue.use(VueRouter)
+
+const routes = [
+  {
+    path: '/',
+    name: '首页',
+    component: () => import('views/Index.vue'),
+    // redirect: { path: '/yxgb', name: '优秀年轻干部报表' },
+    children: [
+      {
+        path: '/yydtjg/dtjk',
+        name: '动态监控',
+        component: () => import('views/OperationDynamicSupervision/DynamicMonitoring.vue')
+      },
+      {
+        path: '/yydtjg/qyjk',
+        name: '区域监控',
+        component: () => import('views/OperationDynamicSupervision/AreaMonitoring.vue')
+      },
+      {
+        path: '/fzjczc/hyzl',
+        name: '行业总览',
+        component: () => import('views/AssistantDecisionSupport/IndustryOverview.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/ptgsjbxxb',
+        name: '平台公司基本信息表',
+        component: () =>
+          import('views/MinistryOfTransportData/StaticData/CompanyBasicInformation.vue')
+      },
+      {
+        path: '/jtbsj/jtsjcx/yygmxxb',
+        name: '营运规模信息表',
+        component: () =>
+          import(
+            'views/MinistryOfTransportData/StaticData/BusinessOperationInformation.vue'
+          )
+      }
+    ]
+  }
+]
+
+const router = new VueRouter({
+  routes
+})
+
+export default router

@@ -1,0 +1,65 @@
+<!-- 交通部数据/动态数据查询/订单发起表  -->
+<template>
+  <t-query-panel :model="query" size="medium">
+    <template v-slot:querybar>
+      <el-form-item>
+        <el-button type="primary">查询</el-button>
+      </el-form-item>
+    </template>
+    <t-table-page
+      :loading="table.loading"
+      :data="table.data"
+      :page-size="table.pageSize"
+      :page-total="table.total"
+    >
+      <el-table-column prop="name"></el-table-column>
+    </t-table-page>
+  </t-query-panel>
+</template>
+
+<script>
+import { getTableData } from 'api/MinistryOfTransportData/DynamicData/order-initiation-api'
+
+export default {
+  name: 'OrderInitiation',
+  data() {
+    return {
+      query: {
+        ptname: '',
+        stime: '',
+        etime: ''
+      },
+      table: {
+        loading: false,
+        data: [],
+        pageSize: 10,
+        page: 1,
+        total: 0
+      }
+    }
+  },
+  mounted() {
+    this.getTableData()
+  },
+  methods: {
+    getTableData() {
+      const { ptname, stime, etime } = this.query
+      const { page, pageSize } = this.table
+
+      getTableData({
+        ptname,
+        stime,
+        etime,
+        page,
+        pageSize
+      }).then(res => {
+        this.table.data = res.datas
+        // 总数
+        this.table.data = res.count
+      })
+    }
+  }
+}
+</script>
+
+<style></style>

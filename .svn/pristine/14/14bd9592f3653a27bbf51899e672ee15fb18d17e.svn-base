@@ -1,0 +1,10 @@
+<!-- 单车收益分析 -->
+<template> </template>
+
+<script>
+export default {
+  name: 'BicycleRevenueAnalysis'
+}
+</script>
+
+<style></style>

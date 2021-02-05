@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <link rel="icon" href="<%= BASE_URL %>favicon.ico">
+  <script type="text/javascript"
+    src="https://webapi.amap.com/maps?v=1.4.15&key=3086a16ecfce5f14b97731037c982093&plugin=AMap.Geolocation,AMap.CircleEditor"></script>
+  <script src="//at.alicdn.com/t/font_1115197_hhwsmb9ako.js"></script>
+  <title>银川市网约车监管平台</title>
+</head>
+
+<body>
+  <noscript>
+    <strong>We're sorry but <%= htmlWebpackPlugin.options.title %> doesn't work properly without JavaScript enabled.
+      Please enable it to continue.</strong>
+  </noscript>
+  <div id="app"></div>
+  <!-- built files will be auto injected -->
+</body>
+
+</html>
